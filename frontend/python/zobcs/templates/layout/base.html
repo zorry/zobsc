@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link href="{{STATIC_URL}}css/bootstrap.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="{{STATIC_URL}}js/jquery-1.8.3.min.js"></script>
+<script type="text/javascript" src=http://code.jquery.com/ui/1.9.2/jquery-ui.js></script>
+<script type="text/javascript" src="{{STATIC_URL}}js/jquery.colorbox-min.js"></script>
+<script type="text/javascript" src="{{STATIC_URL}}js/bootstrap.js"></script>
+<script type="text/javascript" src="{{STATIC_URL}}js/main.js"></script>
+</head>
+<body>
+<div class="navbar">
+<div class="navbar-inner">
+<a class="navbar-brand" href="/">ZOBCS</a>
+<ul class="nav">
+    <li class="active"><a href="/">Home</a></li>
+    <li id="categories"><a href="/categories">Packages</a></li>
+    <li id="contact"><a href="/contact">Contact</a></li>
+    <li id="newlogs"><a href="/newlogs">Last build packages</a></li>
+    <li id="about"><a href="/about">About</a></li>
+    {% if user.is_authenticated %}
+    <li><a href="/logout">Logout</a></li>
+    {% endif %}
+</ul>
+{% if user.is_authenticated %}
+<p style="float:right;" >Welcome, {{ user.username }}. Thanks for logging in.</p>
+{% else %}
+{% load url from future %}
+<form class="form-inline" method="post" action="{% url 'django.contrib.auth.views.login' %}" style="float:right;">
+{% csrf_token %}
+<input type="text" class="input-sm" placeholder="username" name="username"></input>
+<input type="password" class="input-sm" placeholder="Password" name="password"></input>
+<button type="submit" class="btn">Sign in</button>
+</form>
+{% endif %}
+</div>
+</div>
+<div class="container">
+<div class="row">
+<div class="span11">
+{% block content %}
+{% endblock %}
+</div>
+<div class=span1>Top10</div>
+</div>
+</div>
+</body>
+<footer id="footer">Footer</footer>
+</html>

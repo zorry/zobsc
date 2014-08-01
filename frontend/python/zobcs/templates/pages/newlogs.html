@@ -1,0 +1,34 @@
+{% extends "layout/base.html" %}
+{% block content %}
+<table border="1">
+{% for log in logs %}
+        <tr>
+                <td><a href="/buildinfo/{{log.EbuildId}}/{{log.BuildLogId}}/">
+		{% if log.Active %}
+			{% if log.Fail %}
+				<p class="text-danger">	{{ log.C }}/{{ log.P }}-{{ log.V }}</p>
+			{% else %}
+				<p class="text-success">{{ log.C }}/{{ log.P }}-{{ log.V }}</p>
+			{% endif %}
+		{% else %}
+			<p class="text-muted">{{ log.C }}/{{ log.P }}-{{ log.V }}</p>
+		{% endif %}
+                </a></td>
+                <td>{{ log.R}}</td>
+		<td>{{ log.RV}}</td>
+		<td>{{ log.profile}}</td>
+		<td>{{ log.config}}</td>
+		<td>{{ log.hostname}}</td>
+		<td>{{ log.logname}}</td>
+		{% if log.BugId %}
+			<td>
+			<a href="https://bugs.gentoo.org/show_bug.cgi?id={{ log.BugId}}">{{ log.BugId}}</td>
+		{% else %}
+			<td>    </td>
+		{% endif %}
+		<td>{{ log.logname}}</td>
+                <td>{{ log..TimeStamp|date:"Y M D d H:i:s" }}</td>
+        </tr>
+{% endfor %}
+</table>
+{% endblock %}

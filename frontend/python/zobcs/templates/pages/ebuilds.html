@@ -1,0 +1,26 @@
+{% extends "layout/base.html" %}
+{% block content %}
+{% for E in EI %}
+	{% if E.BuildLog %}
+		<a href="/buildinfo/{{E.EbuildId}}/0/">
+		{% if E.Active %}
+			{% if E.HaveFailLog %}
+				<p class="text-danger">	{{ E.C }}/{{ E.P }}-{{ E.V }}::{{ E.R }}  {{ E.RV }}</p>
+			{% else %}
+				<p class="text-success">{{ E.C }}/{{ E.P }}-{{ E.V }}::{{ E.R }}  {{ E.RV }}</p>
+			{% endif %}
+			<a href="/build/{{E.EbuildId}}/" class="btn btn-default btn-sm role="button">Build</a>
+		{% else %}
+			<p class="text-muted">{{ E.C }}/{{ E.P }}-{{ E.V }}::{{ E.R }}  {{ E.RV }}</p>
+		{% endif %}
+		</a>
+	{% else %}
+		{% if E.Active %}
+			<p>	{{ E.C }}/{{ E.P }}-{{ E.V }}::{{ E.R }}  {{ E.RV }}</p>
+			<a href="/build/{{E.EbuildId}}/" class="btn btn-default btn-sm role="button">Build</a>
+		{% else %}
+			<p class="text-muted">{{ E.C }}/{{ E.P }}-{{ E.V }}::{{ E.R }}  {{ E.RV }}</p>
+		{% endif %}
+	{% endif %}
+{% endfor %}
+{% endblock %}

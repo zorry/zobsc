@@ -1,0 +1,28 @@
+{% extends "layout/base.html" %}
+{% load url from future %}
+<link href="{{STATIC_URL}}css/main.css" rel="stylesheet" type="text/css" />
+{% block content %}
+{% if form.errors %}
+<p>Your username and password didn't match. Please try again.</p>
+{% endif %}
+<form class="form-horizontal" method="POST" action="{% url 'django.contrib.auth.views.login' %}">
+{% csrf_token %}
+    <div class="control-group">
+    <label class="control-label" for="inputEmail">Username</label>
+    <div class="controls">
+    <input type="text" id="username" placeholder="username" name="username">
+    </div>
+    </div>
+    <div class="control-group">
+    <label class="control-label" for="inputPassword">Password</label>
+    <div class="controls">
+    <input type="password" id="inputPassword" placeholder="Password" name="password">
+    </div>
+    </div>
+    <div class="control-group">
+    <div class="controls">
+    <button type="submit" class="btn">Sign in</button>
+    </div>
+    </div>
+    </form>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "layout/base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{STATIC_URL}}css/colorbox.css" type="text/css"/>
+<script>
+    $(document).ready(function(){
+    //Examples of how to assign the ColorBox event to elements
+    $(".iframe").colorbox({iframe:true, width:"80%", height:"80%"});
+    });
+</script>
+<div class="container-fluid">
+<div class="accordion" id="accordion2">
+{% for B in BLI %}
+<div class="accordion-group row-fluid">
+<div class="accordion-heading">
+<a class="accordion-toggle" data-toggle="collapse" data-target="#accordion-target-{{forloop.counter}}" data-parent="#accordion2" href="#collapseOne">{{ B.C }}/{{ B.P }}-{{ B.V }}::{{ B.R }}  {{ B.RV }}</a>
+
+<div id="accordion-target-{{forloop.counter}}" class="row-fluid accordion-body collapse">
+<div class="accordion-inner">
+<div class="row-fluid">
+<div class=span3>
+    <p class="lead">Host information</p>
+        Host:{{ B.hostname }}<br />
+        Config:{{B.config }}<br />
+	Profile:{{B.profile }}<br/>
+        Emerge options:
+        {% for eoption in B.emerge_option %}
+            {{ eoption }}
+        {% endfor %}
+</div>
+{% if B.use_enable %}
+<div class="span3 ">
+    <p class="lead">Enabled useflags</p>
+        {% for use in B.use_enable %}
+            {{ use  }}
+        {% endfor %}
+</div>
+{% endif %}
+{% if B.use_disable %}
+<div class=span3>
+    <p class="lead">Disabled useflags</p>
+        {% for use in B.use_disable %}
+            {{ use }}
+        {% endfor %}
+</div>
+{% endif %}
+</div>
+<br></br>
+<div class="row-fluid">
+<div class=span12>
+	{% if B.Summery_text %}
+		<p class="lead">Summery: </p>
+		{{ B.Summery_text|linebreaks }}
+	{% endif %}
+</div>
+<div class="row-fluid">
+<div class="span12">
+{% if configs.logname %}
+            <br />
+            Log file name:{{ configs.logname }}<br />
+            <p><a class='iframe' href="/showlog/{{ B.logid }}">Show log</a></p>
+            <a href="{{ STATIC_URL }}logs/{{B.hostname}}/{{B.config}}/{{ B.logname }}">Raw log<a/><br />
+            <a href="/submitlog/{{B.BuildLogId}}/">Summit log to Gentoo's bugzilla</a>
+        {% endif %}
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endfor %}
+{% endblock %}

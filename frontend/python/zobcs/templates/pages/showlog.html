@@ -1,0 +1,15 @@
+<link href="{{STATIC_URL}}css/showlog.css" rel="stylesheet" type="text/css" />
+<h1>{{loginfo.ConfigId.Hostname}}/{{loginfo.ConfigId.Config}}{{loginfo.LogName}}</h1>
+<table border="0">
+<th>Line nummbers</th>
+<th>Log</th>
+{% for logtext in log_list %}
+        <tr>
+        <td><p id='linenumber'>{{ forloop.counter }} :</p></td>
+        {% if logtext.hilight %}
+                <td></p><p id="default" style="color:{{logtext.hilight}}">{{ logtext.textline }}</p></td>
+        {% else %}
+                <td> </p><p id="default"> {{ logtext.textline }}</p></td>
+        {% endif %}
+        </tr>
+{% endfor %}

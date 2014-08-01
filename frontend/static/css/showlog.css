@@ -1,0 +1,32 @@
+body {
+	background-color 	:	Black;
+}
+#default {
+	color		:	White;
+	text-align		:	left;
+}
+#info1 {
+	color		:	#7FFF00;
+	text-align		:	left;
+}
+#info2 {
+	color		:	Green;
+	text-align		:	left;
+}
+#qa1{
+	color		:	Yellow;
+	text-align		:	left;
+}
+#linenumber {
+	color		:	White;
+	text-align		:	right;
+	padding-right	:	2px;
+}
+h1{
+	color		:	White;
+}
+th {
+	color		:	White;
+	text-align		:	left;
+	padding-right	:	5px;
+}

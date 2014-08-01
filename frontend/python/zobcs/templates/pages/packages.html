@@ -1,0 +1,12 @@
+{% extends "layout/base.html" %}
+{% block content %}
+{% for P in p_list %}
+	<a href="/ebuilds/{{P.PackageId}}/">
+	{% if P.Active == "True" %}
+		<p>{{ P.Package }}::{{P.RepoId.Repo}}</p>
+	{% else %}
+		<p class="text-muted">{{ P.Package }}::{{P.RepoId.Repo}}</p>
+	{% endif %}
+	</a>
+{% endfor %}
+{% endblock %}

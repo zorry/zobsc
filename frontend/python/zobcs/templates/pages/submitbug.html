@@ -1,0 +1,8 @@
+{% extends "layout/base.html" %}
+<link href="{{STATIC_URL}}css/categories_context.css" rel="stylesheet" type="text/css" />
+{% block content %}
+<form action="/submitlog/{{B.BuildLogId}}/" method="post">{% csrf_token %}
+{{ form.as_p }}
+<input type="submit" value="Submit" />
+</form>
+{% endblock %}

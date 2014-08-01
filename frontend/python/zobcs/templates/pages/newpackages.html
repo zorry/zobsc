@@ -1,0 +1,14 @@
+{% extends "layout/base.html" %}
+{% block content %}
+<table border="1">
+{% for package in packages %}
+        <tr>
+                <td><a href="/main/buildinfo/{{package.EbuildId}}/">
+                {{ package.PackageId.CategoryId.Category }}/{{ package.PackageId.Package }}-{{ package.Version }}
+                </a></td>
+                <td>{{ package.PackageId.RepoId.Repo}}</td>
+                <td>{{ package.TimeStamp|date:"Y M D d H:i:s" }}</td>
+        </tr>
+{% endfor %}
+</table>
+{% endblock %}

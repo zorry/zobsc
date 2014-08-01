@@ -1,0 +1,21 @@
+{% extends "layout/base.html" %}
+{% block content %}
+<div class="row">
+
+{% for C in c_list %}
+<div class=span2>
+	<a href="/packages/{{C.CategoryId}}/">
+	{% if C.Active == "True" %}
+		<span>{{ C.Category }}</span>
+	{% else %}
+		<span class="text-muted">{{ C.Category }}</span>
+	{% endif %}
+	</a>
+	</div>
+	{% if forloop.counter|divisibleby:5 %}
+	</div>
+	<div class="row">
+	{% endif %}
+{% endfor %}
+</div>
+{% endblock %}
