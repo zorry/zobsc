@@ -1,8 +1,7 @@
 {% extends "layout/base.html" %}
 {% block content %}
-<form action="/build/{{AB.Id}}/" method="post">{% csrf_token %}
-{{ CF.as_p }}
-{{ CU.as_p }}
-<input type="submit" value="Submit" />
+<form action="/build/{{B}}/" method="post">{% csrf_token %}
+{{ Configform.as_p }}
+<input type="submit" value="New" />
 </form>
 {% endblock %}

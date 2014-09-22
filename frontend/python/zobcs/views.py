@@ -1,6 +1,7 @@
 from zobcs.models import *
 from zobcs.forms import *
 from zobcs.utils.pybugzilla import PrettyBugz
+from zobcs.utils.builduseflags import config_get_use
 from django.shortcuts import render, get_object_or_404, HttpResponseRedirect
 from django.conf import settings
 from django.contrib.auth import authenticate, login
@@ -265,15 +266,13 @@ def views_buildinfo_bugzilla(request, buildlog_id):
 def views_show_bug(request, bug_id):
 	return render(request, 'pages/submitbug.html', TmpDict)
 
-def views_addbuild(request, ebuild_id):
+def views_packagesbuild(request, ebuild_id):
+	BJ = BuildJobs.objects.filter(EbuildId__EbuildId = ebuild_id)
 	EM = EbuildsMetadata.objects.get(EbuildId = ebuild_id)
-	EU_tmp = EbuildsIuse.objects.filter(EbuildId = ebuild_id)
-	UseFlagsForm = False
-	SetupsList = []
-	for CS in Configs.objects.filter(DefaultConfig = 'False'):
-		atulip = ()
-		atulip = '%s, %s' % (CS.Config, CS.Config)
-		SetupsList.append(atulip)
+	BuildList = True
+	if BJ == []:
+		BuildList = False
+	B = ebuild_id
 	adict = {}
 	adict['C'] = EM.EbuildId.PackageId.CategoryId.Category
 	adict['P'] = EM.EbuildId.PackageId.Package
@@ -282,19 +281,54 @@ def views_addbuild(request, ebuild_id):
 	adict['RV'] = EM.Revision
 	adict['Id'] = ebuild_id
 	if request.method == 'POST':
-		Configform = ChoiceConfig(request.POST)
+		Configform = ChoiceBuildConfigSetupSelect(request.POST)
 		if Configform.is_valid():
-			ConfigList = Configform.cleaned_data['Setups']
-			UseFlagsForm = BuildUse(request.POST)
-			if UseFlagsForm.is_valid():
-				return HttpResponseRedirect('/fooo/')
-			else:	
-				UseFlagsForm = BuildUse(prefix='use')
-				UseFlagsForm.fields['Use'].queryset = EbuildsIuse.objects.filter(EbuildId=ebuild_id)
+			ChoiceConfigId = Configform.cleaned_data['Config']
+			return HttpResponseRedirect('/newbuild/' + ebuild_id + '/' + ChoiceConfigId + '/')
 	else:
-		Configform = ChoiceConfig()
-		Configform.fields['Setups'].initial = SetupsList
-	TmpDict = { 'AB': adict, }
-	TmpDict['UF'] = UseFlagsForm
-	TmpDict['CF'] = Configform
+		Configform = ChoiceBuildConfigSetupSelect()
+	TmpDict = { 'BuildList' : BuildList, }
+	TmpDict['B'] = B
+	TmpDict['Configform'] = Configform
 	return render(request, 'pages/addbuild.html', TmpDict)
+
+def views_packagesbuildnew(request, ebuild_id, config_id):
+	EM = EbuildsMetadata.objects.get(EbuildId = ebuild_id)
+	adict = {}
+	adict['C'] = EM.EbuildId.PackageId.CategoryId.Category
+	adict['P'] = EM.EbuildId.PackageId.Package
+	adict['V'] = EM.EbuildId.Version
+	adict['R'] = EM.EbuildId.PackageId.RepoId.Repo
+	adict['RV'] = EM.Revision
+	adict['Id'] = ebuild_id
+	UseFlagsDict = config_get_use(ebuild_id, config_id)
+	if request.method == 'POST':
+		UseForm = ChoiceUseFlagsForBuild(data=request.POST, ebuild_id=ebuild_id, config_id = config_id)
+		if UseForm.is_valid():
+			print(UseForm.cleaned_data)
+			adict = {}
+			for Use in UseForm.cleaned_data:
+				if Use == "Now":
+					if UseForm.cleaned_data[Use] is True:
+						Status = "Now"
+					else:
+						Status = "Waiting"
+				else:
+					UseFlag= get_object_or_404(Uses, Flag = Use)
+					if UseForm.cleaned_data[Use] is True:
+						adict[UseFlag.UseId] = True
+					else:
+						adict[UseFlag.UseId] = False
+			print(adict)
+			print(Status)
+			# 1. save new build job to BuildJobs and get the id of it
+			# 2. save the use flags for the build job in BuildJobsUse
+			# 3. return to /build/ebuild_id/
+			return HttpResponseRedirect('/works/')
+	else:
+		UseForm = ChoiceUseFlagsForBuild(ebuild_id = ebuild_id, config_id = config_id)
+	TmpDict = { 'PInfo' : adict, }
+	TmpDict['Use'] = UseForm
+	TmpDict['EbuildId'] = ebuild_id
+	TmpDict['ConfigId'] = config_id
+	return render(request, 'pages/addbuildjobs.html', TmpDict)
