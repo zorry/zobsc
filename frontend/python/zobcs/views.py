@@ -306,25 +306,25 @@ def views_packagesbuildnew(request, ebuild_id, config_id):
 		UseForm = ChoiceUseFlagsForBuild(data=request.POST, ebuild_id=ebuild_id, config_id = config_id)
 		if UseForm.is_valid():
 			print(UseForm.cleaned_data)
-			adict = {}
 			for Use in UseForm.cleaned_data:
 				if Use == "Now":
 					if UseForm.cleaned_data[Use] is True:
-						Status = "Now"
+						BuildStatus = "Now"
 					else:
-						Status = "Waiting"
+						BuildStatus = "Waiting"
+					# NewBuildJob = BuildJobs(EbuildId = ebuild_id, ConfigId = config_id, Status = BuildStatus)
+					# NewBuildJob.save()
+					# NewBuildJobId = NewBuildJob.id
 				else:
 					UseFlag= get_object_or_404(Uses, Flag = Use)
 					if UseForm.cleaned_data[Use] is True:
-						adict[UseFlag.UseId] = True
+						UseFlagStatus = "True"
 					else:
-						adict[UseFlag.UseId] = False
-			print(adict)
-			print(Status)
-			# 1. save new build job to BuildJobs and get the id of it
-			# 2. save the use flags for the build job in BuildJobsUse
-			# 3. return to /build/ebuild_id/
-			return HttpResponseRedirect('/works/')
+						UseFlagStatus = "False"
+					# NewBuildUse = BuildJobsUse(BuildJobsId = NewBuildJob.id, UseId = UseFlag.UseId, Status = UseFlagStatus)
+					# NewBuildUse.save()
+			return HttpResponseRedirect('/fooo/' + ebuild_id + '/')
+			# return HttpResponseRedirect('/build/' + ebuild_id + '/')
 	else:
 		UseForm = ChoiceUseFlagsForBuild(ebuild_id = ebuild_id, config_id = config_id)
 	TmpDict = { 'PInfo' : adict, }
