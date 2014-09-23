@@ -18,14 +18,14 @@ class Keywords(models.Model):
 		return u'KeywordId : %s, Keyword : %s' % (self.KeywordId, self.Keyword)
 
 class Configs(models.Model):
-	ConfigId = models.IntegerField(primary_key=True, db_column=u'config_id')
+	ConfigId = models.AutoField(primary_key=True, db_column=u'config_id')
 	HostName = models.CharField(max_length=150, db_column=u'hostname')
 	Config = models.CharField(max_length=100, db_column=u'config')
 	DefaultConfig = models.CharField(max_length=15, db_column=u'default_config')
 	class Meta:
 		db_table = u'configs'
 	def __unicode__(self):
-		return u'ConfigId : %s, HostName : %s, Config : %s , DefaultConfig : %s' % (self.ConfigId, self.HostName, self.Config, self.DefaultConfig)
+		return u'HostName : %s, Config : %s , DefaultConfig : %s' % (self.HostName, self.Config, self.DefaultConfig)
 
 class Categories(models.Model):
 	CategoryId = models.IntegerField(primary_key=True, db_column=u'category_id')
@@ -68,7 +68,7 @@ class PackagesMetadata(models.Model):
 		return u'PackageId : %s, Email : %s, Checksum : %s' % (self.PackageId, self.Email, self.Checksum)
 
 class Ebuilds(models.Model):
-	EbuildId = models.IntegerField(primary_key=True, db_column=u'ebuild_id')
+	EbuildId = models.AutoField(primary_key=True, db_column=u'ebuild_id')
 	PackageId = models.ForeignKey(Packages, db_column=u'package_id')
 	Version = models.CharField(max_length=150, db_column=u'version')
 	Checksum = models.CharField(max_length=100, db_column=u'checksum')
@@ -77,7 +77,7 @@ class Ebuilds(models.Model):
 	class Meta:
 		db_table = u'ebuilds'
 	def __unicode__(self):
-		return u'EbuildId : %s, PackageId : %s, Version : %s ,Checksum : %s, Active : %s, TimeStamp : %s' % (self.EbuildId, self.PackageId, self.Version, self.Checksum, self.Active, self.TimeStamp)
+		return u'EbuildId : %s, PackageId : %s, Version : %s , Checksum : %s, Active : %s, TimeStamp : %s' % (self.EbuildId, self.PackageId, self.Version, self.Checksum, self.Active, self.TimeStamp)
 
 class EmergeOptions(models.Model):
 	EmergeOptionId = models.IntegerField(primary_key=True, db_column=u'eoption_id')
@@ -88,7 +88,7 @@ class EmergeOptions(models.Model):
 		return u'EmergeOptionId : %s, EOption : %s' % (self.EmergeOptionId, self.EOption)
 
 class BuildJobs(models.Model):
-	BuildJobsId = models.IntegerField(primary_key=True, db_column=u'build_job_id')
+	BuildJobId = models.AutoField(primary_key=True, db_column=u'build_job_id')
 	EbuildId = models.ForeignKey(Ebuilds, db_column=u'ebuild_id')
 	ConfigId = models.ForeignKey(Configs, db_column=u'config_id')
 	Status = models.CharField(max_length=21, db_column=u'status')
@@ -96,15 +96,15 @@ class BuildJobs(models.Model):
 	class Meta:
 		db_table = u'build_jobs'
 	def __unicode__(self):
-		return u'%s, %s, %s ,%s, %s' % (self.BuildJobId, self.EbuildId, self.ConfigId, self.Status, self.TimeStamp)
+		return u'BuildJobId : %s, EbuildId : %s, ConfigId : %s , Status : %s, TimeStamp : %s' % (self.BuildJobId, self.EbuildId, self.ConfigId, self.Status, self.TimeStamp)
 
 class BuildJobsEmergeOptions(models.Model):
-	BuildJobId = models.OneToOneField(BuildJobs, primary_key=True, db_column=u'build_job_id')
+	BuildJobId = models.OneToOneField(BuildJobs, db_column=u'build_job_id')
 	EOption = models.ForeignKey(EmergeOptions, db_column=u'eoption_id')
 	class Meta:
 		db_table = u'build_jobs_emerge_options'
 	def __unicode__(self):
-		return u'%s, %s' % (self.BuildJobId, self.EOption)
+		return u'BuildJobId : %s, EOption : %s' % (self.BuildJobId, self.EOption)
 
 class BuildJobsRedo(models.Model):
 	BuildJobId = models.OneToOneField(BuildJobs, primary_key=True, db_column=u'build_job_id')
@@ -114,7 +114,7 @@ class BuildJobsRedo(models.Model):
 	class Meta:
 		db_table = u'build_jobs_redo'
 	def __unicode__(self):
-		return u'%s, %s, %s ,%s' % (self.BuildJobId, self.FailTimes, self.FailType, self.TimeStamp)
+		return u'BuildJobId : %s, FailTimes : %s, FailType : %s ,TimeStamp : %s' % (self.BuildJobId, self.FailTimes, self.FailType, self.TimeStamp)
 
 class Restrictions(models.Model):
 	RestrictionId = models.IntegerField(primary_key=True, db_column=u'restriction_id')
@@ -139,7 +139,7 @@ class BuildJobsUse(models.Model):
 	class Meta:
 		db_table = u'build_jobs_use'
 	def __unicode__(self):
-		return u'%s, %s, %s' % (self.BuildJobId, self.UseId, self.Status)
+		return u'BuildJobId : %s, UseId : %s, Status : %s' % (self.BuildJobId, self.UseId, self.Status)
 
 class BuildLogs(models.Model):
 	BuildLogId = models.IntegerField(primary_key=True, db_column=u'build_log_id')
@@ -221,7 +221,7 @@ class BuildLogsQa(models.Model):
 	class Meta:
 		db_table = u'build_logs_qa'
 	def __unicode__(self):
-		return u'%s, %s' % (self.BuildLogId, self.SummeryText)
+		return u'BuildLogId : %s, SummeryText : %s' % (self.BuildLogId, self.SummeryText)
 
 class BuildLogsRepoman(models.Model):
 	BuildLogId = models.OneToOneField(BuildLogs, primary_key=True, db_column=u'build_job_id')
@@ -229,7 +229,7 @@ class BuildLogsRepoman(models.Model):
 	class Meta:
 		db_table = u'build_logs_repoman'
 	def __unicode__(self):
-		return u'%s, %s' % (self.BuildLogId, self.SummeryText)
+		return u'BuildLogId : %s, SummeryText : %s' % (self.BuildLogId, self.SummeryText)
 
 class BuildLogsUse(models.Model):
 	BuildLogId = models.OneToOneField(BuildLogs, primary_key=True, db_column=u'build_log_id')
@@ -286,7 +286,7 @@ class ConfigsMetadata(models.Model):
 
 class EbuildsIuse(models.Model):
 	EbuildId = models.OneToOneField(Ebuilds, primary_key=True, db_column=u'ebuild_id')
-	UseId = models.ForeignKey(Uses, db_column=u'use_id')
+	UseId = models.ManyToManyField(Uses, db_column=u'use_id')
 	Status = models.CharField(max_length=15, db_column=u'status')
 	class Meta:
 		db_table = u'ebuilds_iuse'
@@ -324,7 +324,7 @@ class JobTypes(models.Model):
 	class Meta:
 		db_table = u'job_types'
 	def __unicode__(self):
-		return u'%s, %s' % (self.JobTypeId, self.JobType)
+		return u'JobTypeId : %s, JobType : %s' % (self.JobTypeId, self.JobType)
 
 class Jobs(models.Model):
 	JobId = models.IntegerField(primary_key=True, db_column=u'job_id')
@@ -337,7 +337,7 @@ class Jobs(models.Model):
 	class Meta:
 		db_table = u'jobs'
 	def __unicode__(self):
-		return u'%s, %s, %s ,%s, %s, %s, %s' % (self.JobId, self.JobTypeId, self.Status, \
+		return u'JobId : %s, JobTypeId : %s, Status : %s ,User : %s, ConfigId : %s, RunConfigId : %s, TimeStamp : %s' % (self.JobId, self.JobTypeId, self.Status, \
 			self.User, self.ConfigId, self.RunConfigId, self.TimeStamp)
 
 class Logs(models.Model):
@@ -349,4 +349,4 @@ class Logs(models.Model):
 	class Meta:
 		db_table = u'logs'
 	def __unicode__(self):
-		return u'%s, %s, %s ,%s, %s' % (self.LogId, self.ConfigId, self.LogType, self.Msg, self.TimeStamp)
+		return u'LogId : %s, ConfigId : %s, LogType : %s , Msg : %s, TimeStamp : %s' % (self.LogId, self.ConfigId, self.LogType, self.Msg, self.TimeStamp)

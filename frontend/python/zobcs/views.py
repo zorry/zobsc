@@ -308,11 +308,13 @@ def views_packagesbuildnew(request, ebuild_id, config_id):
 			print(UseForm.cleaned_data)
 			for Use in UseForm.cleaned_data:
 				if Use == "Now":
+					NewBuildJob = BuildJobs()
+					NewBuildJob.EbuildId = ebuild_id
+					NewBuildJob.ConfigId = config_id
 					if UseForm.cleaned_data[Use] is True:
-						BuildStatus = "Now"
+						NewBuildJob.Status = "Now"
 					else:
-						BuildStatus = "Waiting"
-					# NewBuildJob = BuildJobs(EbuildId = ebuild_id, ConfigId = config_id, Status = BuildStatus)
+						NewBuildJob.Status = "Waiting"
 					# NewBuildJob.save()
 					# NewBuildJobId = NewBuildJob.id
 				else:
@@ -321,7 +323,7 @@ def views_packagesbuildnew(request, ebuild_id, config_id):
 						UseFlagStatus = "True"
 					else:
 						UseFlagStatus = "False"
-					# NewBuildUse = BuildJobsUse(BuildJobsId = NewBuildJob.id, UseId = UseFlag.UseId, Status = UseFlagStatus)
+					# NewBuildUse = BuildJobsUse(BuildJobs = NewBuildJob.id, Uses = UseFlag.UseId, Status = UseFlagStatus)
 					# NewBuildUse.save()
 			return HttpResponseRedirect('/fooo/' + ebuild_id + '/')
 			# return HttpResponseRedirect('/build/' + ebuild_id + '/')
