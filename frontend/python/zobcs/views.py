@@ -305,28 +305,24 @@ def views_packagesbuildnew(request, ebuild_id, config_id):
 	if request.method == 'POST':
 		UseForm = ChoiceUseFlagsForBuild(data=request.POST, ebuild_id=ebuild_id, config_id = config_id)
 		if UseForm.is_valid():
-			print(UseForm.cleaned_data)
+			NewBuildJob = BuildJobs()
+			NewBuildJob.EbuildId = Ebuilds.objects.get(EbuildId = ebuild_id)
+			NewBuildJob.ConfigId = Configs.objects.get(ConfigId = config_id)
+			if UseForm.cleaned_data['Now'] is True:
+				NewBuildJob.Status = "Now"
+			else:
+				NewBuildJob.Status = "Waiting"
+			NewBuildJob.save()
+			NewBuildJobId = NewBuildJob.BuildJobId
+			BJ = BuildJobs.objects.get(BuildJobId = NewBuildJobId)
 			for Use in UseForm.cleaned_data:
-				if Use == "Now":
-					NewBuildJob = BuildJobs()
-					NewBuildJob.EbuildId = ebuild_id
-					NewBuildJob.ConfigId = config_id
-					if UseForm.cleaned_data[Use] is True:
-						NewBuildJob.Status = "Now"
-					else:
-						NewBuildJob.Status = "Waiting"
-					# NewBuildJob.save()
-					# NewBuildJobId = NewBuildJob.id
-				else:
+				UseFlagStatus = "False"
+				if not Use == "Now":
 					UseFlag= get_object_or_404(Uses, Flag = Use)
 					if UseForm.cleaned_data[Use] is True:
 						UseFlagStatus = "True"
-					else:
-						UseFlagStatus = "False"
-					# NewBuildUse = BuildJobsUse(BuildJobs = NewBuildJob.id, Uses = UseFlag.UseId, Status = UseFlagStatus)
-					# NewBuildUse.save()
-			return HttpResponseRedirect('/fooo/' + ebuild_id + '/')
-			# return HttpResponseRedirect('/build/' + ebuild_id + '/')
+					BuildJobsUse.objects.create(BuildJobId = BJ, UseId = Uses.objects.get(UseId = UseFlag.UseId), Status = UseFlagStatus)
+			return HttpResponseRedirect('/build/' + ebuild_id + '/')
 	else:
 		UseForm = ChoiceUseFlagsForBuild(ebuild_id = ebuild_id, config_id = config_id)
 	TmpDict = { 'PInfo' : adict, }

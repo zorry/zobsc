@@ -25,7 +25,7 @@ class Configs(models.Model):
 	class Meta:
 		db_table = u'configs'
 	def __unicode__(self):
-		return u'HostName : %s, Config : %s , DefaultConfig : %s' % (self.HostName, self.Config, self.DefaultConfig)
+		return u'ConfigId : %s, HostName : %s, Config : %s , DefaultConfig : %s' % (self.ConfigId, self.HostName, self.Config, self.DefaultConfig)
 
 class Categories(models.Model):
 	CategoryId = models.IntegerField(primary_key=True, db_column=u'category_id')
@@ -99,7 +99,7 @@ class BuildJobs(models.Model):
 		return u'BuildJobId : %s, EbuildId : %s, ConfigId : %s , Status : %s, TimeStamp : %s' % (self.BuildJobId, self.EbuildId, self.ConfigId, self.Status, self.TimeStamp)
 
 class BuildJobsEmergeOptions(models.Model):
-	BuildJobId = models.OneToOneField(BuildJobs, db_column=u'build_job_id')
+	BuildJobId = models.OneToOneField(BuildJobs, primary_key=True, db_column=u'build_job_id')
 	EOption = models.ForeignKey(EmergeOptions, db_column=u'eoption_id')
 	class Meta:
 		db_table = u'build_jobs_emerge_options'
