@@ -558,7 +558,7 @@ def get_build_job_id(connection, build_dict):
 
 def get_hilight_info(connection):
 	cursor = connection.cursor()
-	sqlQ = 'SELECT hilight_search, hilight_search_end, hilight_css, hilight_start, hilight_end FROM hilight'
+	sqlQ = 'SELECT hilight_search, hilight_search_end, hilight_css_id, hilight_start, hilight_end FROM hilight'
 	hilight = []
 	cursor.execute(sqlQ)
 	entries = cursor.fetchall()
@@ -570,7 +570,7 @@ def get_hilight_info(connection):
 			aadict['hilight_search_end'] = i[1]
 		else:
 			aadict['hilight_search_end'] = i[1]
-		aadict['hilight_css'] = i[2]
+		aadict['hilight_css_id'] = i[2]
 		aadict['hilight_start'] = i[3]
 		aadict['hilight_end'] = i[4]
 		hilight.append(aadict)
@@ -603,7 +603,7 @@ def add_new_buildlog(connection, build_dict, build_log_dict):
 	sqlQ9 = 'SELECT config_id FROM build_logs_config WHERE build_log_id = %s'
 	sqlQ10 = "UPDATE build_logs SET summery_text = %s, log_hash = %s WHERE build_log_id = %s"
 	sqlQ11 = 'SELECT LAST_INSERT_ID()'
-	sqlQ12 = 'INSERT INTO build_logs_hilight (build_log_id, start_line, end_line, hilight_css) VALUES (%s, %s, %s, %s)'
+	sqlQ12 = 'INSERT INTO build_logs_hilight (log_id, start_line, end_line, hilight_css_id) VALUES (%s, %s, %s, %s)'
 	sqlQ13 = 'INSERT INTO build_logs_errors ( build_log_id, error_id) VALUES (%s, %s)'
 	build_log_id_list = []
 	cursor.execute(sqlQ1, (build_dict['ebuild_id'],))
@@ -616,7 +616,7 @@ def add_new_buildlog(connection, build_dict, build_log_dict):
 	
 	def add_new_hilight(build_log_id, build_log_dict):
 		for k, hilight_tmp in sorted(build_log_dict['hilight_dict'].iteritems()):
-			cursor.execute(sqlQ12, (build_log_id,hilight_tmp['startline'],  hilight_tmp['endline'], hilight_tmp['hilight'],))
+			cursor.execute(sqlQ12, (build_log_id,hilight_tmp['startline'],  hilight_tmp['endline'], hilight_tmp['hilight_css_id'],))
 
 	def build_log_id_match(build_log_id_list, build_dict, build_log_dict):
 		for build_log_id in build_log_id_list:

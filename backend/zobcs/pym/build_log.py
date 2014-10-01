@@ -104,15 +104,14 @@ def get_build_dict_db(conn, config_id, settings, pkg):
 def search_buildlog(conn, logfile_text):
 	log_search_list = get_hilight_info(conn)
 	index = 0
-	new_hilight_dict = {}
+	hilight_list = []
 	for textline in logfile_text:
 		index = index + 1
 		for search_pattern in log_search_list:
 			if re.search(search_pattern['hilight_search'], textline):
 				hilight_tmp = {}
-				hilight_tmp['searchline'] = index
 				hilight_tmp['startline'] = index - search_pattern['hilight_start']
-				hilight_tmp['hilight'] = search_pattern ['hilight_css']
+				hilight_tmp['hilight'] = search_pattern ['hilight_css_id']
 				if search_pattern['hilight_search_end'] is None:
 					hilight_tmp['endline'] = index + search_pattern['hilight_end']
 				else:
@@ -120,92 +119,52 @@ def search_buildlog(conn, logfile_text):
 					i = index + 1
 					while hilight_tmp['endline'] == None:
 						if re.search(search_pattern['hilight_search_end'], logfile_text[i -1]):
-							# FIXME: We can't run the check have reach the end of logfile_text.
 							if re.search(search_pattern['hilight_search_end'], logfile_text[i]):
 								i = i + 1
 							else:
 								hilight_tmp['endline'] = i
 						else:
 							i = i + 1
-				if not hilight_tmp['startline'] in new_hilight_dict:
-					if hilight_tmp['startline'] != index and hilight_tmp['endline'] == index:
-						i = hilight_tmp['startline']
-						while i == index:
-							adict = {}
-							adict['hilight'] = None
-							new_hilight_dict[hilight_tmp[index]] = adict
-							i = i + 1
-						adict = {}
-						adict['hilight'] = hilight_tmp['hilight']
-						new_hilight_dict[hilight_tmp[index]] = adict
-					elif hilight_tmp['startline'] == index and hilight_tmp['endline'] != index:
-						i = index
-						while i == hilight_tmp['endline']:
-							adict = {}
-							if hilight_tmp['startline'] == index:
-								adict['hilight'] = hilight_tmp['hilight']
-							else:
-								adict['hilight'] = None
-							new_hilight_dict[hilight_tmp[i] = adict
-							i = i + 1
-					elif hilight_tmp['startline'] != index and hilight_tmp['endline'] != index:
-						i = hilight_tmp['startline']
-						while i == hilight_tmp['endline']:
-							adict = {}
-							if i == index:
-								adict['hilight'] = hilight_tmp['hilight']
-							else:
-								adict['hilight'] = None
-							new_hilight_dict[hilight_tmp[i]] = adict
-							i = i + 1
-						adict = {}
-						adict['hilight'] = hilight_tmp['hilight']
-						new_hilight_dict[hilight_tmp[i] = adict
-					else:
-						adict = {}
-						adict['hilight'] = hilight_tmp['hilight']
-						new_hilight_dict[hilight_tmp[index]] = adict
-				else:
-					if not index in new_hilight_dict:
-						i = index - 1
-						add_new_line = True
-						while add_new_line is True:
-							if i in new_hilight_dict:
-								add_new_line = False
-							else:
-								adict = {}
-								adict['hilight'] = None
-								new_hilight_dict[hilight_tmp[i]] = adict
-								i = i - 1
-						adict = {}
-						adict['hilight'] = hilight_tmp['hilight']
-						new_hilight_dict[hilight_tmp[index]] = adict
-						i = index + 1
-						if hilight_tmp['endline'] != index:
-							while i == hilight_tmp['endline']:
-								adict = {}
-								adict['hilight'] = None
-								new_hilight_dict[hilight_tmp[i]] = adict
-								i = i + 1
-							adict = {}
-							adict['hilight'] = hilight_tmp['hilight']
-							new_hilight_dict[hilight_tmp[i]] = adict
-					elif index in new_hilight_dict:
-						if new_hilight_dict[hilight_tmp[index]][['hilight'] == None:
-							new_hilight_dict[hilight_tmp[index]][['hilight'] = hilight_tmp['hilight']
-							if hilight_tmp['endline'] != index:
-								i = index + 1
-								while i == hilight_tmp['endline']:
-									if not i in new_hilight_dict:
-										adict = {}
-										adict['hilight'] = None
-										new_hilight_dict[hilight_tmp[i]] = adict
-									i = i + 1
-								if not i in new_hilight_dict:
-									adict = {}
-									adict['hilight'] = hilight_tmp['hilight']
-									new_hilight_dict[hilight_tmp[i] = adict
-
+				hilight_list.append(hilight_tmp)
+	new_hilight_dict = {}
+        for hilight_tmp in hilight_list:
+		add_new_hilight = True
+		add_new_hilight_middel = None
+		for k, v in sorted(new_hilight_dict.iteritems()):
+			if hilight_tmp['startline'] == hilight_tmp['endline']:
+				if v['endline'] == hilight_tmp['startline'] or v['startline'] == hilight_tmp['startline']:
+					add_new_hilight = False
+				if hilight_tmp['startline'] > v['startline'] and hilight_tmp['startline'] < v['endline']:
+					add_new_hilight = False
+					add_new_hilight_middel = k
+			else:
+				if v['endline'] == hilight_tmp['startline'] or v['startline'] == hilight_tmp['startline']:
+					add_new_hilight = False
+				if hilight_tmp['startline'] > v['startline'] and hilight_tmp['startline'] < v['endline']:
+					add_new_hilight = False
+		if add_new_hilight is True:
+			adict = {}
+			adict['startline'] = hilight_tmp['startline']
+			adict['hilight_css_id'] = hilight_tmp['hilight']
+			adict['endline'] = hilight_tmp['endline']
+			new_hilight_dict[hilight_tmp['startline']] = adict
+		if not add_new_hilight_middel is None:
+			adict1 = {}
+			adict2 = {}
+			adict3 = {}
+			adict1['startline'] = new_hilight_dict[add_new_hilight_middel]['startline']
+			adict1['endline'] = hilight_tmp['startline'] -1
+			adict1['hilight_css_id'] = new_hilight_dict[add_new_hilight_middel]['hilight']
+			adict2['startline'] = hilight_tmp['startline']
+			adict2['hilight_css_id'] = hilight_tmp['hilight']
+			adict2['endline'] = hilight_tmp['endline']
+			adict3['startline'] = hilight_tmp['endline'] + 1
+			adict3['hilight_css_id'] = new_hilight_dict[add_new_hilight_middel]['hilight']
+			adict3['endline'] = new_hilight_dict[add_new_hilight_middel]['endline']
+			del new_hilight_dict[add_new_hilight_middel]
+			new_hilight_dict[adict1['startline']] = adict1
+			new_hilight_dict[adict2['startline']] = adict2
+			new_hilight_dict[adict3['startline']] = adict3
 	return new_hilight_dict
 
 def get_buildlog_info(conn, settings, pkg, build_dict):
@@ -222,13 +181,13 @@ def get_buildlog_info(conn, settings, pkg, build_dict):
 	for k, v in sorted(hilight_dict.iteritems()):
 		if v['startline'] == v['endline']:
 			error_log_list.append(logfile_text[k -1])
-			if v['hilight'] == "3": # qa = 3
+			if v['hilight_css_id'] == "3" or v['hilight_css_id'] == "4": # qa = 3 and 4
 				qa_error_list.append(logfile_text[k -1])
 		else:
 			i = k
 			while i != (v['endline'] + 1):
 				error_log_list.append(logfile_text[i -1])
-				if v['hilight'] == "3": # qa = 3
+				if v['hilight_css_id'] == "3" or v['hilight_css_id'] == "3": # qa = 3 and 4
 					qa_error_list.append(logfile_text[i -1])
 				i = i +1
 
@@ -238,10 +197,13 @@ def get_buildlog_info(conn, settings, pkg, build_dict):
 		sum_build_log_list.append("1") # repoman = 1
 	if qa_error_list != []:
 		sum_build_log_list.append("2") # qa = 2
-	for sum_log_line in sum_build_log_list:
-		if re.search("ERROR: ", sum_log_line):
+	error_search_line = "^ \\* ERROR: "
+	for error_log_line in error_log_list:
+		if re.search(error_search_line, error_log_line):
+			print(error_log_line)
 			for error_info in error_info_list:
-				if re.search(error_info['error_search'], sum_log_line):
+				print(error_info)
+				if re.search(error_info['error_search'], error_log_line):
 					sum_build_log_list.append(error_info['error_id'])
 
 	build_log_dict['repoman_error_list'] = repoman_error_list
@@ -323,35 +285,27 @@ def add_buildlog_main(settings, pkg, trees):
 	else:
 		args = []
 		args.append("--info")
-		args.append("=%s" % pkg.cpv)
+		#args.append("=%s" % pkg.cpv)
 		myaction, myopts, myfiles = parse_opts(args, silent=True)
 		emerge_info_list = action_info(settings, trees, myopts, myfiles)
-		emerge_info = ""
-		e_info_hash = hashlib.sha256()
-		for e_info in emerge_info_list:
-			emerge_info = emerge_info + e_info
-			e_info_hash.update(e_info)
-		e_info_id = add_e_info(conn, log_id, emerge_info, e_info_hash)
-		if not e_info_id is None:
-			log_msg = "New Emerge --info is logged."
-			add_zobcs_logs(conn, log_msg, "info", config_id)
+		for msg in emerge_info_list:
+			write_msg_file("%s\n" % msg, emerge_info_logfilename)
 		os.chmod(settings.get("PORTAGE_LOG_FILE"), 0o664)
+		os.chmod(emerge_info_logfilename, 0o664)
 		log_msg = "Package: %s:%s is logged." % (pkg.cpv, pkg.repo,)
 		add_zobcs_logs(conn, log_msg, "info", config_id)
 		print("\n>>> Logging %s:%s\n" % (pkg.cpv, pkg.repo,))
 	conn.close
 
+
 def log_fail_queru(conn, build_dict, settings):
 	config_id = build_dict['config_id']
-	print('build_dict', build_dict)
 	fail_querue_dict = get_fail_querue_dict(conn, build_dict)
-	print('fail_querue_dict', fail_querue_dict)
 	if fail_querue_dict is None:
 		fail_querue_dict = {}
 		fail_querue_dict['build_job_id'] = build_dict['build_job_id']
 		fail_querue_dict['fail_type'] = build_dict['type_fail']
 		fail_querue_dict['fail_times'] = 1
-		print('fail_querue_dict', fail_querue_dict)
 		add_fail_querue_dict(conn, fail_querue_dict)
 	else:
 		if fail_querue_dict['fail_times'] < 3:
@@ -401,4 +355,5 @@ def log_fail_queru(conn, build_dict, settings):
 				os.chmod(settings.get("PORTAGE_LOG_FILE"), 0o664)
 			else:
 				build_log_dict['logfilename'] = ""
+				build_log_dict['hilight_dict'] = {}
 			log_id = add_new_buildlog(conn, build_dict, build_log_dict)
