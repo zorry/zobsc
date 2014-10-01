@@ -1,0 +1,30 @@
+#!/usr/bin/python
+# Distributed under the terms of the GNU General Public License v2
+
+from __future__ import print_function
+
+from zobcs.readconf import get_conf_settings
+from zobcs.jobs import jobs_main
+from zobcs.ConnectionManager import connectionManager
+from zobcs.mysql_querys import add_zobcs_logs, get_config_id
+import time
+
+def main():
+	# Main
+	reader = get_conf_settings()
+	zobcs_settings_dict=reader.read_zobcs_settings_all()
+	config = zobcs_settings_dict['zobcs_config']
+	hostname = zobcs_settings_dict['hostname']
+	CM=connectionManager()
+	conn = CM.newConnection()
+	config_id = get_config_id(conn, config, hostname)
+	add_zobcs_logs(conn, "Job deamon started", "info", config_id)
+	repeat = True
+	while repeat:
+		jobs_main(conn, config_id)
+		repeat = False
+		time.sleep(60)
+	conn.close
+
+if __name__ == "__main__":
+	main()

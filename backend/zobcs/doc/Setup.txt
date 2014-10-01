@@ -1,0 +1,6 @@
+1. Setup the Backend
+Setup the zobcs.conf  for the db.
+Change ZOBCSGITREPONAME to point to the git repo with your configs for the profiles/setups.
+Import the *zobcs.sql to your mysql.
+The portage/base/make.conf should be in the base profile/setup
+The porfiles dir need a dir call config with a parent file that point to base profile
