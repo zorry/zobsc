@@ -2,6 +2,7 @@ from zobcs.models import *
 from zobcs.forms import *
 from zobcs.utils.pybugzilla import PrettyBugz
 from zobcs.utils.builduseflags import config_get_use
+from zobcs.utils.utils import Get_CPVR
 from django.shortcuts import render, get_object_or_404, HttpResponseRedirect
 from django.conf import settings
 from django.contrib.auth import authenticate, login
@@ -267,19 +268,14 @@ def views_show_bug(request, bug_id):
 	return render(request, 'pages/submitbug.html', TmpDict)
 
 def views_packagesbuild(request, ebuild_id):
-	BJ = BuildJobs.objects.filter(EbuildId__EbuildId = ebuild_id)
 	EM = EbuildsMetadata.objects.get(EbuildId = ebuild_id)
-	BuildList = True
-	if BJ == []:
-		BuildList = False
-	B = ebuild_id
 	adict = {}
 	adict['C'] = EM.EbuildId.PackageId.CategoryId.Category
 	adict['P'] = EM.EbuildId.PackageId.Package
 	adict['V'] = EM.EbuildId.Version
 	adict['R'] = EM.EbuildId.PackageId.RepoId.Repo
 	adict['RV'] = EM.Revision
-	adict['Id'] = ebuild_id
+	adict['EbuildId'] = ebuild_id
 	if request.method == 'POST':
 		Configform = ChoiceBuildConfigSetupSelect(request.POST)
 		if Configform.is_valid():
@@ -287,8 +283,29 @@ def views_packagesbuild(request, ebuild_id):
 			return HttpResponseRedirect('/newbuild/' + ebuild_id + '/' + ChoiceConfigId + '/')
 	else:
 		Configform = ChoiceBuildConfigSetupSelect()
-	TmpDict = { 'BuildList' : BuildList, }
-	TmpDict['B'] = B
+		BJtmp = BuildJobs.objects.filter(EbuildId__EbuildId = ebuild_id)
+		BuildJobList = []
+		for BJ in BJtmp:
+			aadict = {}
+			aadict['Id'] = BJ.BuildJobId
+			aadict['Config'] = BJ.ConfigId.Config
+			BJUtmp = BuildJobsUse.objects.filter(BuildJobId = aadict['Id'])
+			UseList = []
+			for BJU in BJUtmp:
+				aaadict = {}
+				UseFlag= get_object_or_404(Uses, UseId = BJU.UseId.UseId)
+				Use = UseFlag.Flag
+				aaadict['Use'] = Use
+				if BJU.Status == "True":
+					aaadict['Status']= "checked"
+				else:
+					aaadict['Status']= ""
+				UseList.append(aaadict)
+			aadict['Use'] = UseList
+			BuildJobList.append(aadict)
+	TmpDict = { 'BuildJobList' : BuildJobList, }
+	TmpDict['EbuildId'] = ebuild_id
+	TmpDict['B'] = adict
 	TmpDict['Configform'] = Configform
 	return render(request, 'pages/addbuild.html', TmpDict)
 
@@ -305,14 +322,11 @@ def views_packagesbuildnew(request, ebuild_id, config_id):
 	if request.method == 'POST':
 		UseForm = ChoiceUseFlagsForBuild(data=request.POST, ebuild_id=ebuild_id, config_id = config_id)
 		if UseForm.is_valid():
-			NewBuildJob = BuildJobs()
-			NewBuildJob.EbuildId = Ebuilds.objects.get(EbuildId = ebuild_id)
-			NewBuildJob.ConfigId = Configs.objects.get(ConfigId = config_id)
 			if UseForm.cleaned_data['Now'] is True:
-				NewBuildJob.Status = "Now"
+				NewBuildJobStatus = "Now"
 			else:
-				NewBuildJob.Status = "Waiting"
-			NewBuildJob.save()
+				NewBuildJobStatus = "Waiting"
+			NewBuildJob = BuildJobs.objects.create(EbuildId = Ebuilds.objects.get(EbuildId = ebuild_id), ConfigId = Configs.objects.get(ConfigId = config_id), Status = NewBuildJobStatus)
 			NewBuildJobId = NewBuildJob.BuildJobId
 			BJ = BuildJobs.objects.get(BuildJobId = NewBuildJobId)
 			for Use in UseForm.cleaned_data:
@@ -330,3 +344,33 @@ def views_packagesbuildnew(request, ebuild_id, config_id):
 	TmpDict['EbuildId'] = ebuild_id
 	TmpDict['ConfigId'] = config_id
 	return render(request, 'pages/addbuildjobs.html', TmpDict)
+
+def views_delbuildjob(request, buildjob_id):
+	BJ = get_object_or_404(BuildJobs, BuildJobId = buildjob_id)
+	ebuild_id = BJ.EbuildId.EbuildId
+	BuildJobsUse.objects.filter(BuildJobId = buildjob_id).delete()
+	BuildJobs.objects.filter(BuildJobId = buildjob_id).delete()
+	return HttpResponseRedirect('/build/' + ebuild_id + '/')
+	
+def views_editbuildjob(request, buildjob_id):
+	BJ = get_object_or_404(BuildJobs, BuildJobId = buildjob_id)
+	ebuild_id = BJ.EbuildId.EbuildId
+	if request.method == 'POST':
+		EditUseForm = EditUseFlagsForBuild(data=request.POST, buildjob_id = buildjob_id)
+		if EditUseForm.is_valid():
+			UseFlags = BuildJobsUse.objects.filter(BuildJobId = buildjob_id)
+			for Use in UseFlags:
+				if EditUseForm.cleaned_data[Use.UseId.Flag] is True:
+					UseStatus = "True"
+				else:
+					UseStatus = "False"
+				if not UseStatus == Use.Status:
+					BuildJobsUse.objects.filter(BuildJobId = buildjob_id, UseId = Use.UseId.UseId).update(Status= UseStatus)
+			return HttpResponseRedirect('/build/' + str(ebuild_id) + '/')
+			
+	else:
+		EditUseForm = EditUseFlagsForBuild(buildjob_id = buildjob_id)
+	TmpDict = { 'PInfo' : Get_CPVR(ebuild_id = BJ.EbuildId.EbuildId), }
+	TmpDict['EditUse'] = EditUseForm
+	TmpDict['BuildJobId'] = buildjob_id
+	return render(request, 'pages/editbuildjobs.html', TmpDict)

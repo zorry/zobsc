@@ -1,6 +1,7 @@
-from zobcs.models import Configs
+from zobcs.models import Configs, BuildJobsUse, BuildJobs
 from zobcs.utils.builduseflags import config_get_use
 from django.forms import ModelForm
+from django.shortcuts import get_object_or_404
 from django import forms
 
 class BugForm(forms.Form):
@@ -61,3 +62,22 @@ class ChoiceUseFlagsForBuild(forms.Form):
 			self.fields[IUse] = forms.BooleanField(required = False, initial = self.AttrsChecked)
 			self.fields[IUse].widget = forms.CheckboxInput(attrs = {'class' : 'checkbox', 'readonly' : self.AttrsDisable})
 		self.fields['Now'] = forms.BooleanField(required = False)
+
+class EditUseFlagsForBuild(forms.Form):
+	def __init__(self, buildjob_id, *args, **kwargs):
+		super(EditUseFlagsForBuild, self).__init__(*args, **kwargs)
+		UseFlags = BuildJobsUse.objects.filter(BuildJobId = buildjob_id)
+		BJ = get_object_or_404(BuildJobs, BuildJobId = buildjob_id)
+		for UseId in UseFlags:
+			if UseId.Status == "True":
+				self.AttrsChecked = True
+			else:
+				self.AttrsChecked = False
+			self.fields[UseId.UseId.Flag] = forms.BooleanField(required = False, initial = self.AttrsChecked)
+			self.fields[UseId.UseId.Flag].widget = forms.CheckboxInput(attrs = {'class' : 'checkbox'})
+		if BJ.Status == "Now":
+			self.AttrsNowChecked = True
+		else:
+			self.AttrsNowChecked = False
+		self.fields['Now'] = forms.BooleanField(required = False, initial = self.AttrsNowChecked)
+		self.fields['Now'].widget = forms.CheckboxInput(attrs = {'class' : 'checkbox'})

@@ -68,7 +68,7 @@ class PackagesMetadata(models.Model):
 		return u'PackageId : %s, Email : %s, Checksum : %s' % (self.PackageId, self.Email, self.Checksum)
 
 class Ebuilds(models.Model):
-	EbuildId = models.AutoField(primary_key=True, db_column=u'ebuild_id')
+	EbuildId = models.IntegerField(primary_key=True, db_column=u'ebuild_id')
 	PackageId = models.ForeignKey(Packages, db_column=u'package_id')
 	Version = models.CharField(max_length=150, db_column=u'version')
 	Checksum = models.CharField(max_length=100, db_column=u'checksum')
