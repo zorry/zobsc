@@ -15,7 +15,7 @@ version = os.path.split(os.path.abspath(__file__))[-2].split('-')[-1]
 
 packages = ['zobcs']
 
-package_dir = {'zobcs': 'zobcs/pym'}
+package_dir = {'zobcs': 'backend/zobcs/pym'}
 
 setup(
 	name="zobcs",
