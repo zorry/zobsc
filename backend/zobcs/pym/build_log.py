@@ -127,7 +127,7 @@ def search_buildlog(conn, logfile_text):
 							i = i + 1
 				hilight_list.append(hilight_tmp)
 	new_hilight_dict = {}
-        for hilight_tmp in hilight_list:
+	for hilight_tmp in hilight_list:
 		add_new_hilight = True
 		add_new_hilight_middel = None
 		for k, v in sorted(new_hilight_dict.iteritems()):
