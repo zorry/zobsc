@@ -62,6 +62,7 @@ class ChoiceUseFlagsForBuild(forms.Form):
 			self.fields[IUse] = forms.BooleanField(required = False, initial = self.AttrsChecked)
 			self.fields[IUse].widget = forms.CheckboxInput(attrs = {'class' : 'checkbox', 'readonly' : self.AttrsDisable})
 		self.fields['Now'] = forms.BooleanField(required = False)
+		self.fields['RemoveBin'] = forms.BooleanField(required = False, initial = True)
 
 class EditUseFlagsForBuild(forms.Form):
 	def __init__(self, buildjob_id, *args, **kwargs):
@@ -79,5 +80,11 @@ class EditUseFlagsForBuild(forms.Form):
 			self.AttrsNowChecked = True
 		else:
 			self.AttrsNowChecked = False
+		if BJ.RemoveBin:
+			self.AttrsRemoveBinChecked = True
+		else:
+			self.AttrsRemoveBinChecked = False
 		self.fields['Now'] = forms.BooleanField(required = False, initial = self.AttrsNowChecked)
 		self.fields['Now'].widget = forms.CheckboxInput(attrs = {'class' : 'checkbox'})
+		self.fields['RemoveBin'] = forms.BooleanField(required = False, initial = self.AttrsRemoveBinChecked)
+		self.fields['RemoveBin'].widget = forms.CheckboxInput(attrs = {'class' : 'checkbox'})

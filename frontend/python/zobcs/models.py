@@ -92,11 +92,12 @@ class BuildJobs(models.Model):
 	EbuildId = models.ForeignKey(Ebuilds, db_column=u'ebuild_id')
 	ConfigId = models.ForeignKey(Configs, db_column=u'config_id')
 	Status = models.CharField(max_length=21, db_column=u'status')
+	RemoveBin = models.BooleanField(db_column=u'removebin')
 	TimeStamp = models.DateTimeField(db_column=u'time_stamp')
 	class Meta:
 		db_table = u'build_jobs'
 	def __unicode__(self):
-		return u'BuildJobId : %s, EbuildId : %s, ConfigId : %s , Status : %s, TimeStamp : %s' % (self.BuildJobId, self.EbuildId, self.ConfigId, self.Status, self.TimeStamp)
+		return u'BuildJobId : %s, EbuildId : %s, ConfigId : %s , Status : %s, RemoveBin : %s, TimeStamp : %s' % (self.BuildJobId, self.EbuildId, self.ConfigId, self.Status, self.RemoveBin, self.TimeStamp)
 
 class BuildJobsEmergeOptions(models.Model):
 	BuildJobId = models.OneToOneField(BuildJobs, primary_key=True, db_column=u'build_job_id')

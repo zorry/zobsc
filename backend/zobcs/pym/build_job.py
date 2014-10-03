@@ -80,7 +80,21 @@ class build_job_action(object):
      					f.close
 		log_msg = "build_cpv_list: %s" % (build_cpv_list,)
 		add_zobcs_logs(self._conn, log_msg, "info", self._config_id)
-		
+
+		# We remove the binary package if removebin is true
+		if build_dict['removebin']:
+			cp, repo = get_cp_repo_from_package_id(self._conn, build_dict['package_id'])
+			element = cp.split('/')
+			package = element[1]
+			category = element[0]
+			pv = package + "-" + build_dict['ebuild_version']
+			binfile = settings['PKGDIR'] + "/" + category + "/" + pv + ".tbz2"
+                        try:
+                                os.remove(binfile)
+                        except:
+				log_msg = "Binary file was not removed or found: %s" % (binfile,)
+				add_zobcs_logs(self._conn, log_msg, "info", self._config_id)
+
 		argscmd = []
 		for emerge_option in build_dict['emerge_options']:
 			if emerge_option == '--depclean':

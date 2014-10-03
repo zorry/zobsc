@@ -447,10 +447,10 @@ def get_profile_checksum(connection, config_id):
 
 def get_packages_to_build(connection, config_id):
 	cursor =connection.cursor()
-	sqlQ1 = "SELECT build_jobs.build_job_id, build_jobs.ebuild_id, ebuilds.package_id FROM build_jobs, ebuilds WHERE build_jobs.config_id = %s AND build_jobs.ebuild_id = ebuilds.ebuild_id AND ebuilds.active = 'True' AND TIMESTAMPDIFF(HOUR, build_jobs.time_stamp, NOW()) > 1 ORDER BY build_jobs.build_job_id LIMIT 1"
+	sqlQ1 = "SELECT build_jobs.build_job_id, build_jobs.ebuild_id, ebuilds.package_id, build_jobs.removebin FROM build_jobs, ebuilds WHERE build_jobs.config_id = %s AND build_jobs.ebuild_id = ebuilds.ebuild_id AND ebuilds.active = 'True' AND TIMESTAMPDIFF(HOUR, build_jobs.time_stamp, NOW()) > 1 ORDER BY build_jobs.build_job_id LIMIT 1"
 	sqlQ2 = 'SELECT version, checksum FROM ebuilds WHERE ebuild_id = %s'
 	sqlQ3 = 'SELECT uses.flag, build_jobs_use.status FROM build_jobs_use, uses WHERE build_jobs_use.build_job_id = %s AND build_jobs_use.use_id = uses.use_id'
-	sqlQ4 = "SELECT build_jobs.build_job_id, build_jobs.ebuild_id, ebuilds.package_id FROM build_jobs, ebuilds WHERE build_jobs.config_id = %s AND build_jobs.ebuild_id = ebuilds.ebuild_id AND ebuilds.active = 'True' AND build_jobs.status = 'Now' LIMIT 1"
+	sqlQ4 = "SELECT build_jobs.build_job_id, build_jobs.ebuild_id, ebuilds.package_id, build_jobs.removebin FROM build_jobs, ebuilds WHERE build_jobs.config_id = %s AND build_jobs.ebuild_id = ebuilds.ebuild_id AND ebuilds.active = 'True' AND build_jobs.status = 'Now' LIMIT 1"
 	sqlQ5 = 'SELECT emerge_options.eoption FROM configs_emerge_options, emerge_options WHERE configs_emerge_options.config_id = %s AND configs_emerge_options.eoption_id = emerge_options.eoption_id'
 	sqlQ6 = 'SELECT emerge_options.eoption FROM build_jobs_emerge_options, emerge_options WHERE build_jobs_emerge_options.build_job_id = %s AND build_jobs_emerge_options.eoption_id = emerge_options.eoption_id'
 	cursor.execute(sqlQ4, (config_id,))
@@ -466,6 +466,7 @@ def get_packages_to_build(connection, config_id):
 	build_dict['build_job_id'] = entries[0]
 	build_dict['ebuild_id']= entries[1]
 	build_dict['package_id'] = entries[2]
+	build_dict['removebin'] = entries[3]
 	cursor.execute(sqlQ2, (entries[1],))
 	entries = cursor.fetchone()
 	build_dict['ebuild_version'] = entries[0]

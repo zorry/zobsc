@@ -9,9 +9,7 @@
 	<div class="checkbox">
 	<span> Build job id: {{ BuildJobs.Id}} Setup/Config: {{ BuildJobs.Config}}</span>
 	{% for Use in BuildJobs.Use %}
-		<label>
-		<input class="form-control" type="checkbox" {{ Use.Status }}>{{ Use.Use }}
-		</label>
+		<p><label><input class="form-control" type="checkbox" {{ Use.Status }}>{{ Use.Use }}</label></p>
 	{% endfor %}
 	</fieldset>
 	<a href="/editbuildjob/{{ BuildJobs.Id}}/" class="btn btn-default btn-lg active" role="button">Edit</a>

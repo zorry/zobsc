@@ -303,6 +303,7 @@ def views_packagesbuild(request, ebuild_id):
 				UseList.append(aaadict)
 			aadict['Use'] = UseList
 			BuildJobList.append(aadict)
+	print(BuildJobList)
 	TmpDict = { 'BuildJobList' : BuildJobList, }
 	TmpDict['EbuildId'] = ebuild_id
 	TmpDict['B'] = adict
@@ -326,17 +327,17 @@ def views_packagesbuildnew(request, ebuild_id, config_id):
 				NewBuildJobStatus = "Now"
 			else:
 				NewBuildJobStatus = "Waiting"
-			NewBuildJob = BuildJobs.objects.create(EbuildId = Ebuilds.objects.get(EbuildId = ebuild_id), ConfigId = Configs.objects.get(ConfigId = config_id), Status = NewBuildJobStatus)
+			NewBuildJob = BuildJobs.objects.create(EbuildId = Ebuilds.objects.get(EbuildId = ebuild_id), ConfigId = Configs.objects.get(ConfigId = config_id), RemoveBin = UseForm.cleaned_data['RemoveBin'], Status = NewBuildJobStatus)
 			NewBuildJobId = NewBuildJob.BuildJobId
 			BJ = BuildJobs.objects.get(BuildJobId = NewBuildJobId)
 			for Use in UseForm.cleaned_data:
 				UseFlagStatus = "False"
-				if not Use == "Now":
+				if Use != "Now" and Use != "RemoveBin":
 					UseFlag= get_object_or_404(Uses, Flag = Use)
 					if UseForm.cleaned_data[Use] is True:
 						UseFlagStatus = "True"
 					BuildJobsUse.objects.create(BuildJobId = BJ, UseId = Uses.objects.get(UseId = UseFlag.UseId), Status = UseFlagStatus)
-			return HttpResponseRedirect('/build/' + ebuild_id + '/')
+			return HttpResponseRedirect('/build/' + str(ebuild_id) + '/')
 	else:
 		UseForm = ChoiceUseFlagsForBuild(ebuild_id = ebuild_id, config_id = config_id)
 	TmpDict = { 'PInfo' : adict, }
@@ -350,7 +351,7 @@ def views_delbuildjob(request, buildjob_id):
 	ebuild_id = BJ.EbuildId.EbuildId
 	BuildJobsUse.objects.filter(BuildJobId = buildjob_id).delete()
 	BuildJobs.objects.filter(BuildJobId = buildjob_id).delete()
-	return HttpResponseRedirect('/build/' + ebuild_id + '/')
+	return HttpResponseRedirect('/build/' + str(ebuild_id) + '/')
 	
 def views_editbuildjob(request, buildjob_id):
 	BJ = get_object_or_404(BuildJobs, BuildJobId = buildjob_id)
