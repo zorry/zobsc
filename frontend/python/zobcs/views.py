@@ -86,35 +86,33 @@ def views_buildinfo(request, ebuild_id, buildlog_id):
 			adict['Fail'] = False
 		adict['Summery_text'] = B.SummeryText
 		config_list = []
-		for BC in BuildLogsConfig.objects.filter(BuildLogId = B.BuildLogId).order_by('-TimeStamp'):
-			CM = ConfigsMetadata.objects.get(ConfigId = BC.ConfigId.ConfigId)
-			CEO_tmp = ConfigsEmergeOptions.objects.filter(ConfigId = BC.ConfigId.ConfigId)
-			BU_tmp = BuildLogsUse.objects.filter(BuildLogId = BC.BuildLogId)
-			config_eoption = []
-			aadict = {}
-			aadict['configid'] = BC.ConfigId.ConfigId
-			aadict['hostname'] = BC.ConfigId.HostName
-			aadict['config'] = BC.ConfigId.Config
-			aadict['profile'] = CM.Profile
-			aadict['logid'] = BC.LogId
-			aadict['logname'] = BC.LogName[1:]
-			aadict['emerge_info_text'] = BC.EInfoId.EmergeInfoText
-			for CEO in CEO_tmp:
-				config_eoption.append(CEO.EmergeOptionId.EOption)
-			aadict['emerge_option'] = config_eoption
-			if not BU_tmp == []:
-				use_enable = []
-				use_disable = []
-				for BU in BU_tmp:
-					if BU.Status == "True":
-						use_enable.append(BU.UseId.Flag)
-					else:
-						use_disable.append(BU.UseId.Flag)
-				if not use_enable == []:
-					aadict['use_enable'] = use_enable
-				if not use_disable == []:
-					aadict['use_disable'] = use_disable
-		        config_list.append(aadict)
+		BC = BuildLogsConfig.objects.get(BuildLogId = B.BuildLogId)
+		CM = ConfigsMetadata.objects.get(ConfigId = BC.ConfigId.ConfigId)
+		CEO_tmp = ConfigsEmergeOptions.objects.filter(ConfigId = BC.ConfigId.ConfigId)
+		BU_tmp = BuildLogsUse.objects.filter(BuildLogId = BC.BuildLogId)
+		config_eoption = []
+		adict['configid'] = BC.ConfigId.ConfigId
+		adict['hostname'] = BC.ConfigId.HostName
+		adict['config'] = BC.ConfigId.Config
+		adict['profile'] = CM.Profile
+		adict['logid'] = BC.LogId
+		adict['logname'] = BC.LogName[1:]
+		adict['emerge_info_text'] = BC.EInfoId.EmergeInfoText
+		for CEO in CEO_tmp:
+			config_eoption.append(CEO.EmergeOptionId.EOption)
+		adict['emerge_option'] = config_eoption
+		if not BU_tmp == []:
+			use_enable = []
+			use_disable = []
+			for BU in BU_tmp:
+				if BU.Status == "True":
+					use_enable.append(BU.UseId.Flag)
+				else:
+					use_disable.append(BU.UseId.Flag)
+			if not use_enable == []:
+				adict['use_enable'] = use_enable
+			if not use_disable == []:
+				adict['use_disable'] = use_disable
                 adict['BuildLog'] = config_list
 		BuildLogInfo.append(adict)
 	TmpDict = { 'BLI' : BuildLogInfo }
@@ -303,7 +301,6 @@ def views_packagesbuild(request, ebuild_id):
 				UseList.append(aaadict)
 			aadict['Use'] = UseList
 			BuildJobList.append(aadict)
-	print(BuildJobList)
 	TmpDict = { 'BuildJobList' : BuildJobList, }
 	TmpDict['EbuildId'] = ebuild_id
 	TmpDict['B'] = adict

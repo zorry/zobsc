@@ -118,14 +118,13 @@ def search_buildlog(conn, logfile_text):
 					hilight_tmp['endline'] = None
 					i = index + 1
 					while hilight_tmp['endline'] == None:
-						if re.search(search_pattern['hilight_search_end'], logfile_text[i -1]):
+						try:
 							if re.search(search_pattern['hilight_search_end'], logfile_text[i]):
 								i = i + 1
-							else:
-								hilight_tmp['endline'] = i
-						else:
-							i = i + 1
+						except IndexError:
+							hilight_tmp['endline'] = i - 1
 				hilight_list.append(hilight_tmp)
+
 	new_hilight_dict = {}
 	for hilight_tmp in hilight_list:
 		add_new_hilight = True

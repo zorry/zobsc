@@ -102,6 +102,7 @@ class zobcs_use_flags(object):
 		# reset cpv filter
 		self._mysettings.reset()
 		self._mysettings.lock()
+		print(usemask)
 		return use, use_expand_hidden, usemask, useforce
 
 	def get_all_cpv_use_looked(self):

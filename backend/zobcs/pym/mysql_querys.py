@@ -568,7 +568,7 @@ def get_hilight_info(connection):
 		aadict = {}
 		aadict['hilight_search'] = i[0]
 		if i[1] == "":
-			aadict['hilight_search_end'] = i[1]
+			aadict['hilight_search_end'] = None
 		else:
 			aadict['hilight_search_end'] = i[1]
 		aadict['hilight_css_id'] = i[2]

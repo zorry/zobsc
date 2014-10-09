@@ -53,14 +53,15 @@ class ChoiceUseFlagsForBuild(forms.Form):
 				self.AttrsDisable = True
 			else:
 				self.AttrsDisable = False
-			if IUse.startswith("abi_"):
+			if IUse.startswith("abi_") or IUse.startswith("python_"):
 				self.AttrsDisable = True
 			if IUse in UseFlagsDict['useflags']:
 				self.AttrsChecked = True
 			else:
 				self.AttrsChecked = False
-			self.fields[IUse] = forms.BooleanField(required = False, initial = self.AttrsChecked)
-			self.fields[IUse].widget = forms.CheckboxInput(attrs = {'class' : 'checkbox', 'readonly' : self.AttrsDisable})
+			if not IUse.startswith("abi_") and not IUse.startswith("python_"):
+				self.fields[IUse] = forms.BooleanField(required = False, initial = self.AttrsChecked)
+				self.fields[IUse].widget = forms.CheckboxInput(attrs = {'class' : 'checkbox', 'readonly' : self.AttrsDisable})
 		self.fields['Now'] = forms.BooleanField(required = False)
 		self.fields['RemoveBin'] = forms.BooleanField(required = False, initial = True)
 

@@ -8,7 +8,7 @@ def config_get_use(ebuild_id, config_id):
 	ConfigSetupHostName = CS.HostName
 	# Change config/setup
 	# my_new_setup = "/var/cache/gobs/" + gobs_settings_dict['gobs_gitreponame'] + "/" + host_config + "/"
-	my_new_setup = "/etc/portage/"
+	my_new_setup = "/"
 	mysettings_setup = portage.config(config_root = my_new_setup)
 	myportdb_setup = portage.portdbapi(mysettings=mysettings_setup)
 
