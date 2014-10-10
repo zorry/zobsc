@@ -16,7 +16,7 @@ from portage.dep import check_required_use
 from zobcs.main import emerge_main
 from zobcs.build_log import log_fail_queru
 from zobcs.actions import load_emerge_config
-from zobcs.mysql_querys import add_zobcs_logs, get_cp_repo_from_package_id, get_packages_to_build
+from zobcs.mysql_querys import add_zobcs_logs, get_cp_repo_from_package_id, get_packages_to_build, get_config
 
 class build_job_action(object):
 
@@ -135,30 +135,30 @@ class build_job_action(object):
 
 		build_dict2 = {}
 		build_dict2 = get_packages_to_build(self._conn, self._config_id)
-		if build_dict['build_job_id'] == build_dict2['build_job_id']:
-			log_msg = "build_job %s was not removed" % (build_dict['build_job_id'],)
-			add_zobcs_logs(self._conn, log_msg, "info", self._config_id)
-			print("qurery was not removed")
-			if build_fail is True:
-				build_dict['type_fail'] = "Emerge faild"
-				build_dict['check_fail'] = True
-				log_msg = "Emerge faild!"
+		if not build_dict2 is None:
+			if build_dict['build_job_id'] == build_dict2['build_job_id']:
+				log_msg = "build_job %s was not removed" % (build_dict['build_job_id'],)
 				add_zobcs_logs(self._conn, log_msg, "info", self._config_id)
-			else:
+				print("qurery was not removed")
 				build_dict['type_fail'] = "Querey was not removed"
 				build_dict['check_fail'] = True
-			log_fail_queru(self._conn, build_dict, settings)
+				log_fail_queru(self._conn, build_dict, settings)
 		if build_fail is True:
+			build_dict['type_fail'] = "Emerge faild"
+			build_dict['check_fail'] = True
+			log_msg = "Emerge faild!"
+			add_zobcs_logs(self._conn, log_msg, "info", self._config_id)
 			return True
 		return False
 
 	def procces_build_jobs(self):
 		build_dict = {}
 		build_dict = get_packages_to_build(self._conn, self._config_id)
-		settings, trees, mtimedb = load_emerge_config()
-		portdb = trees[settings["ROOT"]]["porttree"].dbapi
 		if build_dict is None:
 			return
+		print("build_dict: %s" % (build_dict,))
+		settings, trees, mtimedb = load_emerge_config()
+		portdb = trees[settings["ROOT"]]["porttree"].dbapi
 		log_msg = "build_dict: %s" % (build_dict,)
 		add_zobcs_logs(self._conn, log_msg, "info", self._config_id)
 		if not build_dict['ebuild_id'] is None and build_dict['checksum'] is not None:

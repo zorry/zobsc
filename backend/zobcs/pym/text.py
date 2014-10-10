@@ -40,9 +40,11 @@ def  get_log_text_list(filename):
 	try:
 		logfile = open(filename)
 	except:
-		return None
+		return None, 0
 	text = []
+	index = 1
 	dataLines = logfile.readlines()
 	for i in dataLines:
 		text.append(i)
-	return text
+		index = index + 1
+	return text, index

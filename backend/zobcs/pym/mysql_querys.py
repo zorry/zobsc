@@ -597,7 +597,7 @@ def add_new_buildlog(connection, build_dict, build_log_dict):
 	sqlQ1 = 'SELECT build_log_id FROM build_logs WHERE ebuild_id = %s'
 	sqlQ2 ="INSERT INTO build_logs (ebuild_id, summery_text, log_hash) VALUES (%s, 'FF', 'FF')"
 	sqlQ3 = "UPDATE build_logs SET fail = 'True' WHERE build_log_id = %s"
-	sqlQ4 = 'INSERT INTO build_logs_config (build_log_id, config_id, logname) VALUES (%s, %s, %s)'
+	sqlQ4 = 'INSERT INTO build_logs_config (build_log_id, config_id, logname, einfo_id) VALUES (%s, %s, %s, %s)'
 	sqlQ6 = 'INSERT INTO build_logs_use (build_log_id, use_id, status) VALUES (%s, %s, %s)'
 	sqlQ7 = 'SELECT log_hash FROM build_logs WHERE build_log_id = %s'
 	sqlQ8 = 'SELECT use_id, status FROM build_logs_use WHERE build_log_id = %s'
@@ -638,7 +638,7 @@ def add_new_buildlog(connection, build_dict, build_log_dict):
 					config_id_list.append(config_id[0])
 				if build_dict['config_id'] in config_id_list:
 					return None, True
-				cursor.execute(sqlQ4, (build_log_id, build_dict['config_id'], build_log_dict['logfilename'],))
+				cursor.execute(sqlQ4, (build_log_id, build_dict['config_id'], build_log_dict['logfilename'], build_log_dict['einfo_id'].))
 				return build_log_id, True
 		return None, False
 
@@ -684,20 +684,16 @@ def add_new_buildlog(connection, build_dict, build_log_dict):
 def add_e_info(connection, log_id, emerge_info, e_info_hash):
 	cursor = connection.cursor()
 	sqlQ1 = 'SELECT einfo_id FROM emerge_info WHERE checksum = %s'
-	sqlQ2 = 'UPDATE build_logs SET einfo_id = %s WHERE build_log_id = %s'
 	sqlQ3 ='INSERT INTO emerge_info (checksum, emerge_info_text) VALUES (%s, %s)'
 	sqlQ4 = 'SELECT LAST_INSERT_ID()'
 	cursor.execute(sqlQ1, (e_info_hash,))
 	entries = cursor.fetchall()
 	if entries != []:
-		cursor.execute(sqlQ2, (entries[0],))
-		connection.commit()
 		cursor.close()
 		return None
 	cursor.execute(sqlQ3, (e_info_hash, emerge_info,))
 	cursor.execute(sqlQ4)
-	entries = cursor.fetchall()
-	cursor.execute(sqlQ2, (entries[0],))
+	entries = cursor.fetchone()[0]
 	connection.commit()
 	cursor.close()
 	return entries[0]

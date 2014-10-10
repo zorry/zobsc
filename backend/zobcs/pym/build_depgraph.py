@@ -33,7 +33,7 @@ def build_mydepgraph(settings, trees, mtimedb, myopts, myparams, myaction, myfil
 					mydepgraph._display_autounmask()
 					build_dict['type_fail'] = "Need use change"
 					build_dict['check_fail'] = True
-				elif mydepgraph._dynamic_config._slot_collision_info:
+				elif mydepgraph._dynamic_config._slot_conflict_handler:
 					build_dict['type_fail'] = "Slot blocking"
 					build_dict['check_fail'] = True
 				elif mydepgraph._dynamic_config._circular_deps_for_display:

@@ -73,6 +73,15 @@ class zobcs_use_flags(object):
 		for a in use[:]:
 			if a in archlist:
 				use.remove(a)
+		# clean out any abi_ flag
+		for a in use[:]:
+			if a.startswith("abi_"):
+				use.remove(a)
+		# clean out any python_ flag
+		for a in use[:]:
+			if a.startswith("python_"):
+				use.remove(a)
+
 		# dbl check if any from usemasked  or useforced are still there
 		masked = usemasked + useforced
 		for a in use[:]:

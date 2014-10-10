@@ -26,7 +26,7 @@ from zobcs.ConnectionManager import connectionManager
 from zobcs.mysql_querys import add_zobcs_logs, get_config_id, get_ebuild_id_db_checksum, add_new_buildlog, \
 	update_manifest_sql, get_package_id, get_build_job_id, get_use_id, get_fail_querue_dict, \
 	add_fail_querue_dict, update_fail_times, get_config, get_hilight_info, get_error_info_list, \
-	add_old_ebuild
+	add_old_ebuild, add_e_info
 
 def get_build_dict_db(conn, config_id, settings, pkg):
 	myportdb = portage.portdbapi(mysettings=settings)
@@ -101,7 +101,7 @@ def get_build_dict_db(conn, config_id, settings, pkg):
 		build_dict['build_job_id'] = build_job_id
 	return build_dict
 
-def search_buildlog(conn, logfile_text):
+def search_buildlog(conn, logfile_text, text_rows):
 	log_search_list = get_hilight_info(conn)
 	index = 0
 	hilight_list = []
@@ -114,15 +114,22 @@ def search_buildlog(conn, logfile_text):
 				hilight_tmp['hilight'] = search_pattern ['hilight_css_id']
 				if search_pattern['hilight_search_end'] is None:
 					hilight_tmp['endline'] = index + search_pattern['hilight_end']
+					if hilight_tmp['endline'] > text_rows:
+						hilight_tmp['endline'] = text_rows
 				else:
 					hilight_tmp['endline'] = None
 					i = index + 1
-					while hilight_tmp['endline'] == None:
-						try:
-							if re.search(search_pattern['hilight_search_end'], logfile_text[i]):
-								i = i + 1
-						except IndexError:
-							hilight_tmp['endline'] = i - 1
+					if i >= text_rows:
+						hilight_tmp['endline'] = text_rows
+					else:
+						while hilight_tmp['endline'] == None:
+							if text_rows > i:
+								if re.search(search_pattern['hilight_search_end'], logfile_text[i]):
+									hilight_tmp['endline'] = i
+								else:
+									i = i + 1
+							else:
+								hilight_tmp['endline'] = text_row
 				hilight_list.append(hilight_tmp)
 
 	new_hilight_dict = {}
@@ -169,8 +176,8 @@ def search_buildlog(conn, logfile_text):
 def get_buildlog_info(conn, settings, pkg, build_dict):
 	myportdb = portage.portdbapi(mysettings=settings)
 	init_repoman = zobcs_repoman(settings, myportdb)
-	logfile_text = get_log_text_list(settings.get("PORTAGE_LOG_FILE"))
-	hilight_dict = search_buildlog(conn, logfile_text)
+	logfile_text, text_rows = get_log_text_list(settings.get("PORTAGE_LOG_FILE"))
+	hilight_dict = search_buildlog(conn, logfile_text, text_rows)
 	build_log_dict = {}
 	error_log_list = []
 	qa_error_list = []
@@ -212,38 +219,6 @@ def get_buildlog_info(conn, settings, pkg, build_dict):
 	build_log_dict['hilight_dict'] = hilight_dict
 	return build_log_dict
 
-def write_msg_file(msg, log_path):
-	"""
-	Output msg to stdout if not self._background. If log_path
-	is not None then append msg to the log (appends with
-	compression if the filename extension of log_path
-	corresponds to a supported compression type).
-	"""
-	msg_shown = False
-	if log_path is not None:
-		try:
-			f = open(_unicode_encode(log_path,
-			    encoding=_encodings['fs'], errors='strict'),
-			mode='ab')
-			f_real = f
-		except IOError as e:
-			if e.errno not in (errno.ENOENT, errno.ESTALE):
-				raise
-			if not msg_shown:
-				writemsg_level(msg, level=level, noiselevel=noiselevel)
-		else:
-			if log_path.endswith('.gz'):
-				# NOTE: The empty filename argument prevents us from
-				# triggering a bug in python3 which causes GzipFile
-				# to raise AttributeError if fileobj.name is bytes
-				# instead of unicode.
-				f =  gzip.GzipFile(filename='', mode='ab', fileobj=f)
-
-			f.write(_unicode_encode(msg))
-			f.close()
-			if f_real is not f:
-				f_real.close()
-
 def add_buildlog_main(settings, pkg, trees):
 	CM = connectionManager()
 	conn = CM.newConnection()
@@ -276,21 +251,24 @@ def add_buildlog_main(settings, pkg, trees):
 	build_log_dict['logfilename'] = settings.get("PORTAGE_LOG_FILE").split(host_config)[1]
 	log_msg = "Logfile name: %s" % (settings.get("PORTAGE_LOG_FILE"),)
 	add_zobcs_logs(conn, log_msg, "info", config_id)
+	args = []
+	args.append("--info")
+	myaction, myopts, myfiles = parse_opts(args, silent=True)
+	status, emerge_info_list = action_info(settings, trees, myopts, myfiles)
+	emerge_info = ""
+	e_info_hash = hashlib.sha256()
+	for e_info in emerge_info_list:
+		emerge_info = emerge_info + e_info
+		e_info_hash.update(e_info)
+	einfo_id, new = add_e_info(conn, emerge_info, e_info_hash.hexdigest())
+	build_log_dict['einfo_id'] = einfo_id
 	log_id = add_new_buildlog(conn, build_dict, build_log_dict)
 
 	if log_id is None:
 		log_msg = "Package %s:%s is NOT logged." % (pkg.cpv, pkg.repo,)
 		add_zobcs_logs(conn, log_msg, "info", config_id)
 	else:
-		args = []
-		args.append("--info")
-		#args.append("=%s" % pkg.cpv)
-		myaction, myopts, myfiles = parse_opts(args, silent=True)
-		emerge_info_list = action_info(settings, trees, myopts, myfiles)
-		for msg in emerge_info_list:
-			write_msg_file("%s\n" % msg, emerge_info_logfilename)
 		os.chmod(settings.get("PORTAGE_LOG_FILE"), 0o664)
-		os.chmod(emerge_info_logfilename, 0o664)
 		log_msg = "Package: %s:%s is logged." % (pkg.cpv, pkg.repo,)
 		add_zobcs_logs(conn, log_msg, "info", config_id)
 		print("\n>>> Logging %s:%s\n" % (pkg.cpv, pkg.repo,))
