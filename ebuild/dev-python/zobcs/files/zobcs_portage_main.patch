@@ -20,7 +20,7 @@
  	return os.EX_OK
  
 -def emerge_main(args=None):
-+def emerge_main(args=None, build_dict=None):
++def emerge_main(args=None, build_dict=None, session=None):
  	"""
  	@param args: command arguments (default: sys.argv[1:])
  	@type args: list
@@ -42,7 +42,7 @@
  
  	try:
 -		return run_action(emerge_config)
-+		return run_action(emerge_config, build_dict)
++		return run_action(emerge_config, build_dict, session)
  	finally:
  		# Call destructors for our portdbapi instances.
  		for x in emerge_config.trees.values():

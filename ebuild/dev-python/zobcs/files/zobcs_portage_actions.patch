@@ -30,7 +30,7 @@
  
  def action_build(settings, trees, mtimedb,
 -	myopts, myaction, myfiles, spinner):
-+	myopts, myaction, myfiles, spinner, build_dict):
++	myopts, myaction, myfiles, spinner, build_dict, session):
  
  	if '--usepkgonly' not in myopts:
  		old_tree_timestamp_warn(settings['PORTDIR'], settings)
@@ -46,7 +46,7 @@
 -			display_missing_pkg_set(root_config, e.value)
 -			return 1
 +		success, settings, trees, mtimedb, mydepgraph = build_mydepgraph(settings,
-+			trees, mtimedb, myopts, myparams, myaction, myfiles, spinner, build_dict)
++			trees, mtimedb, myopts, myparams, myaction, myfiles, spinner, build_dict, session)
  
  		if not success:
 -			mydepgraph.display_problems()
@@ -145,7 +145,7 @@
  	return bool(ignored_repos)
  
 -def run_action(emerge_config):
-+def run_action(emerge_config, build_dict):
++def run_action(emerge_config, build_dict, session):
  
  	# skip global updates prior to sync, since it's called after sync
  	if emerge_config.action not in ('help', 'info', 'sync', 'version') and \
@@ -154,7 +154,7 @@
  			emerge_config.trees, emerge_config.target_config.mtimedb,
  			emerge_config.opts, emerge_config.action,
 -			emerge_config.args, spinner)
-+			emerge_config.args, spinner, build_dict)
++			emerge_config.args, spinner, build_dict, session)
  		post_emerge(emerge_config.action, emerge_config.opts,
  			emerge_config.args, emerge_config.target_config.root,
  			emerge_config.trees, emerge_config.target_config.mtimedb, retval)
