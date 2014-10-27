@@ -6,6 +6,7 @@ from zobcs.utils.utils import Get_CPVR
 from django.shortcuts import render, get_object_or_404, HttpResponseRedirect
 from django.conf import settings
 from django.contrib.auth import authenticate, login
+from django.db import transaction
 import gzip
 import os
 
@@ -37,20 +38,14 @@ def views_ebuilds(request, package_id):
 		adict['V'] = E.Version
 		adict['R'] = E.PackageId.RepoId.Repo
 		adict['RV'] = EM.Revision
-		if E.Active == "True":
-			adict['Active'] = True
-		else:
-			adict['Active'] = False
+		adict['Active'] = E.Active
 		if BL:
 			adict['BuildLog'] = True
 			HaveFailLog = False
 			for B in BL:
-				if B.Fail == "True":
+				if B.Fail:
 					HaveFailLog = True
-			if HaveFailLog:
-				adict['HaveFailLog'] = HaveFailLog
-			else:
-				adict['HaveFailLog'] = False
+			adict['HaveFailLog'] = HaveFailLog
 		else:
 			adict['BuildLog'] = False
 		EbuildInfo.append(adict)
@@ -80,10 +75,7 @@ def views_buildinfo(request, ebuild_id, buildlog_id):
 		adict['V'] = B.EbuildId.Version
 		adict['R'] = B.EbuildId.PackageId.RepoId.Repo
 		adict['RV'] = EM.Revision
-		if B.Fail == "True":
-			adict['Fail'] = True
-		else:
-			adict['Fail'] = False
+		adict['Fail'] = B.Fail
 		adict['Summery_text'] = B.SummeryText
 		config_list = []
 		BC = BuildLogsConfig.objects.get(BuildLogId = B.BuildLogId)
@@ -105,7 +97,7 @@ def views_buildinfo(request, ebuild_id, buildlog_id):
 			use_enable = []
 			use_disable = []
 			for BU in BU_tmp:
-				if BU.Status == "True":
+				if BU.Status:
 					use_enable.append(BU.UseId.Flag)
 				else:
 					use_disable.append(BU.UseId.Flag)
@@ -164,15 +156,9 @@ def views_newlogs(request):
 		adict['V'] = BC.BuildLogId.EbuildId.Version
 		adict['R'] = BC.BuildLogId.EbuildId.PackageId.RepoId.Repo
 		adict['RV'] = EM.Revision
-		if BC.BuildLogId.EbuildId.Active == "True":
-			adict['Active'] = True
-		else:
-			adict['Active'] = False
+		adict['Active'] = BC.BuildLogId.EbuildId.Active
 		adict['TimeStamp'] = BC.TimeStamp
-		if BC.BuildLogId.Fail == "True":
-			adict['Fail'] = True
-		else:
-			adict['Fail'] = False
+		adict['Fail'] = BC.BuildLogId.Fail
 		if BC.BuildLogId.BugId == "0":
 			adict['BugId'] = False
 		else:
@@ -243,7 +229,7 @@ def views_buildinfo_bugzilla(request, buildlog_id):
 			bug['id'] = submit_to_bugzilla(form, buildlog_id)
                         return HttpResponseRedirect(reverse('views_show_bug', kwargs={'bugid':bug.id,}))
 	else:
-		if B.Fail == 'True':
+		if B.Fail:
 			F = get_object_or_404(BuildLogsErrors, BuildLogId = buildlog_id)
 			FailText = " : " + F.ErrorId.ErrorName
 		else:
@@ -294,7 +280,7 @@ def views_packagesbuild(request, ebuild_id):
 				UseFlag= get_object_or_404(Uses, UseId = BJU.UseId.UseId)
 				Use = UseFlag.Flag
 				aaadict['Use'] = Use
-				if BJU.Status == "True":
+				if BJU.Status:
 					aaadict['Status']= "checked"
 				else:
 					aaadict['Status']= ""
@@ -320,19 +306,15 @@ def views_packagesbuildnew(request, ebuild_id, config_id):
 	if request.method == 'POST':
 		UseForm = ChoiceUseFlagsForBuild(data=request.POST, ebuild_id=ebuild_id, config_id = config_id)
 		if UseForm.is_valid():
-			if UseForm.cleaned_data['Now'] is True:
-				NewBuildJobStatus = "Now"
-			else:
-				NewBuildJobStatus = "Waiting"
-			NewBuildJob = BuildJobs.objects.create(EbuildId = Ebuilds.objects.get(EbuildId = ebuild_id), ConfigId = Configs.objects.get(ConfigId = config_id), RemoveBin = UseForm.cleaned_data['RemoveBin'], Status = NewBuildJobStatus)
+			NewBuildJob = BuildJobs.objects.create(EbuildId = Ebuilds.objects.get(EbuildId = ebuild_id), ConfigId = Configs.objects.get(ConfigId = config_id), BuildNow = UseForm.cleaned_data['Now'], RemoveBin = UseForm.cleaned_data['RemoveBin'], Status = "Waiting")
 			NewBuildJobId = NewBuildJob.BuildJobId
 			BJ = BuildJobs.objects.get(BuildJobId = NewBuildJobId)
 			for Use in UseForm.cleaned_data:
-				UseFlagStatus = "False"
+				UseFlagStatus = False
 				if Use != "Now" and Use != "RemoveBin":
 					UseFlag= get_object_or_404(Uses, Flag = Use)
-					if UseForm.cleaned_data[Use] is True:
-						UseFlagStatus = "True"
+					if UseForm.cleaned_data[Use]:
+						UseFlagStatus = True
 					BuildJobsUse.objects.create(BuildJobId = BJ, UseId = Uses.objects.get(UseId = UseFlag.UseId), Status = UseFlagStatus)
 			return HttpResponseRedirect('/build/' + str(ebuild_id) + '/')
 	else:
@@ -358,10 +340,7 @@ def views_editbuildjob(request, buildjob_id):
 		if EditUseForm.is_valid():
 			UseFlags = BuildJobsUse.objects.filter(BuildJobId = buildjob_id)
 			for Use in UseFlags:
-				if EditUseForm.cleaned_data[Use.UseId.Flag] is True:
-					UseStatus = "True"
-				else:
-					UseStatus = "False"
+				UseStatus = EditUseForm.cleaned_data[Use.UseId.Flag]
 				if not UseStatus == Use.Status:
 					BuildJobsUse.objects.filter(BuildJobId = buildjob_id, UseId = Use.UseId.UseId).update(Status= UseStatus)
 			return HttpResponseRedirect('/build/' + str(ebuild_id) + '/')

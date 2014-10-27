@@ -36,7 +36,7 @@ class BugForm(forms.Form):
 		return u'Product : %s, Component : %s, Version : %s, Summary : %s, Description : %s, EmergeInfo : %s, AssigendTo : %s, CCList : %s' % (self.Product, self.Component, self.Version, self.Summary, self.Description, self.EmergeInfo, self.AssigendTo, self.CCList)
 
 class ChoiceBuildConfigSetupSelect(ModelForm):
-	Config = forms.ChoiceField(choices=[(x.ConfigId, x.Config) for x in Configs.objects.filter(DefaultConfig = 'False')])
+	Config = forms.ChoiceField(choices=[(x.ConfigId, x.Config) for x in Configs.objects.filter(DefaultConfig = False)])
 	class Meta:
 		model = Configs
 		fields = ['Config']
@@ -62,7 +62,7 @@ class ChoiceUseFlagsForBuild(forms.Form):
 			if not IUse.startswith("abi_") and not IUse.startswith("python_"):
 				self.fields[IUse] = forms.BooleanField(required = False, initial = self.AttrsChecked)
 				self.fields[IUse].widget = forms.CheckboxInput(attrs = {'class' : 'checkbox', 'readonly' : self.AttrsDisable})
-		self.fields['Now'] = forms.BooleanField(required = False)
+		self.fields['Now'] = forms.BooleanField(required = False, initial = False)
 		self.fields['RemoveBin'] = forms.BooleanField(required = False, initial = True)
 
 class EditUseFlagsForBuild(forms.Form):
@@ -71,11 +71,7 @@ class EditUseFlagsForBuild(forms.Form):
 		UseFlags = BuildJobsUse.objects.filter(BuildJobId = buildjob_id)
 		BJ = get_object_or_404(BuildJobs, BuildJobId = buildjob_id)
 		for UseId in UseFlags:
-			if UseId.Status == "True":
-				self.AttrsChecked = True
-			else:
-				self.AttrsChecked = False
-			self.fields[UseId.UseId.Flag] = forms.BooleanField(required = False, initial = self.AttrsChecked)
+			self.fields[UseId.UseId.Flag] = forms.BooleanField(required = False, initial = self.UseId.Status)
 			self.fields[UseId.UseId.Flag].widget = forms.CheckboxInput(attrs = {'class' : 'checkbox'})
 		if BJ.Status == "Now":
 			self.AttrsNowChecked = True

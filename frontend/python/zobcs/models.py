@@ -21,7 +21,7 @@ class Configs(models.Model):
 	ConfigId = models.AutoField(primary_key=True, db_column=u'config_id')
 	HostName = models.CharField(max_length=150, db_column=u'hostname')
 	Config = models.CharField(max_length=100, db_column=u'config')
-	DefaultConfig = models.CharField(max_length=15, db_column=u'default_config')
+	DefaultConfig = models.BooleanField(db_column=u'default_config')
 	class Meta:
 		db_table = u'configs'
 	def __unicode__(self):
@@ -30,7 +30,7 @@ class Configs(models.Model):
 class Categories(models.Model):
 	CategoryId = models.IntegerField(primary_key=True, db_column=u'category_id')
 	Category = models.CharField(max_length=150, db_column=u'category')
-	Active = models.CharField(max_length=15, db_column=u'active')
+	Active = models.BooleanField(db_column=u'active')
 	TimeStamp = models.DateTimeField(db_column=u'time_stamp')
 	class Meta:
 		db_table = u'categories'
@@ -51,7 +51,7 @@ class Packages(models.Model):
 	Package = models.CharField(max_length=150, db_column=u'package')
 	RepoId = models.ForeignKey(Repos, db_column=u'repo_id')
 	Checksum = models.CharField(max_length=100, db_column=u'checksum')
-	Active = models.CharField(max_length=15, db_column=u'active')
+	Active = models.BooleanField(db_column=u'active')
 	TimeStamp = models.DateTimeField(db_column=u'time_stamp')
 	class Meta:
 		db_table = u'packages'
@@ -59,7 +59,8 @@ class Packages(models.Model):
 		return u'PackageId : %s, CategoryId : %s, Package : %s, Repos : %s, Checksum : %s, Active : %s, TimeStamp : %s' % (self.PackageId, self.CategoryId, self.Package, self.RepoId, self.Checksum, self.Active, self.TimeStamp)
 
 class PackagesMetadata(models.Model):
-	PackageId = models.OneToOneField(Packages, primary_key=True, db_column=u'package_id')
+	Id =  models.IntegerField(primary_key=True, db_column=u'id')
+	PackageId = models.ForeignKey(Packages, db_column=u'package_id')
 	Email = models.CharField(max_length=150, db_column=u'email')
 	Checksum = models.CharField(max_length=100, db_column=u'checksum')
 	class Meta:
@@ -72,7 +73,7 @@ class Ebuilds(models.Model):
 	PackageId = models.ForeignKey(Packages, db_column=u'package_id')
 	Version = models.CharField(max_length=150, db_column=u'version')
 	Checksum = models.CharField(max_length=100, db_column=u'checksum')
-	Active = models.CharField(max_length=15, db_column=u'active')
+	Active = models.BooleanField(db_column=u'active')
 	TimeStamp = models.DateTimeField(db_column=u'time_stamp')
 	class Meta:
 		db_table = u'ebuilds'
@@ -92,23 +93,26 @@ class BuildJobs(models.Model):
 	EbuildId = models.ForeignKey(Ebuilds, db_column=u'ebuild_id')
 	ConfigId = models.ForeignKey(Configs, db_column=u'config_id')
 	Status = models.CharField(max_length=21, db_column=u'status')
+	BuildNow = models.BooleanField(db_column=u'build_now')
 	RemoveBin = models.BooleanField(db_column=u'removebin')
 	TimeStamp = models.DateTimeField(db_column=u'time_stamp')
 	class Meta:
 		db_table = u'build_jobs'
 	def __unicode__(self):
-		return u'BuildJobId : %s, EbuildId : %s, ConfigId : %s , Status : %s, RemoveBin : %s, TimeStamp : %s' % (self.BuildJobId, self.EbuildId, self.ConfigId, self.Status, self.RemoveBin, self.TimeStamp)
+		return u'BuildJobId : %s, EbuildId : %s, ConfigId : %s , Status : %s, BuildNow : %s, RemoveBin : %s, TimeStamp : %s' % (self.BuildJobId, self.EbuildId, self.ConfigId, self.Status, self.BuildNow, self.RemoveBin, self.TimeStamp)
 
 class BuildJobsEmergeOptions(models.Model):
-	BuildJobId = models.OneToOneField(BuildJobs, primary_key=True, db_column=u'build_job_id')
-	EOption = models.ForeignKey(EmergeOptions, db_column=u'eoption_id')
+	Id = models.IntegerField(primary_key=True, db_column=u'id')
+	BuildJobId = models.ForeignKey(BuildJobs, db_column=u'build_job_id')
+	EOptionId = models.ForeignKey(EmergeOptions, db_column=u'eoption_id')
 	class Meta:
 		db_table = u'build_jobs_emerge_options'
 	def __unicode__(self):
-		return u'BuildJobId : %s, EOption : %s' % (self.BuildJobId, self.EOption)
+		return u'BuildJobId : %s, EOptionId : %s' % (self.BuildJobId, self.EOptionId)
 
 class BuildJobsRedo(models.Model):
-	BuildJobId = models.OneToOneField(BuildJobs, primary_key=True, db_column=u'build_job_id')
+	Id = models.IntegerField(primary_key=True, db_column=u'id')
+	BuildJobId = models.ForeignKey(BuildJobs, db_column=u'build_job_id')
 	FailTimes = models.IntegerField(db_column=u'fail_times')
 	FailType = models.CharField(max_length=90, db_column=u'fail_type')
 	TimeStamp = models.DateTimeField(db_column=u'time_stamp')
@@ -134,9 +138,10 @@ class Uses(models.Model):
 		return u'UseId : %s, Flag : %s' % (self.UseId, self.Flag)
 
 class BuildJobsUse(models.Model):
-	BuildJobId = models.OneToOneField(BuildJobs, primary_key=True, db_column=u'build_job_id')
+	Id = models.IntegerField(primary_key=True, db_column=u'id')
+	BuildJobId = models.ForeignKey(BuildJobs, db_column=u'build_job_id')
 	UseId = models.ForeignKey(Uses, db_column=u'use_id')
-	Status = models.CharField(max_length=15, db_column=u'status')
+	Status = models.BooleanField(db_column=u'status')
 	class Meta:
 		db_table = u'build_jobs_use'
 	def __unicode__(self):
@@ -209,7 +214,8 @@ class BuildLogsHiLight(models.Model):
 		return u'Id : %s, LogId : %s, StartLine : %s, EndLine : %s, HiLightId : %s' % (self.Id, self.LogId, self.StartLine, self.EndLine, self.HiLightId)
 
 class BuildLogsEmergeOptions(models.Model):
-	BuildLogId = models.OneToOneField(BuildLogs, primary_key=True, db_column=u'build_log_id')
+	Id = models.IntegerField(primary_key=True, db_column=u'id')
+	BuildLogId = models.ForeignKey(BuildLogs, db_column=u'build_log_id')
 	EmergeOptionId = models.ForeignKey(EmergeOptions, db_column=u'eoption_id')
 	class Meta:
 		db_table = u'build_logs_emerge_options'
@@ -217,7 +223,8 @@ class BuildLogsEmergeOptions(models.Model):
 		return u'BuildLogId : %s, EmergeOptionId%s' % (self.BuildLogId, self.EmergeOptionId, self.Config)
 
 class BuildLogsQa(models.Model):
-	BuildLogId = models.OneToOneField(BuildLogs, primary_key=True, db_column=u'build_log_id')
+	Id = models.IntegerField(primary_key=True, db_column=u'id')
+	BuildLogId = models.ForeignKey(BuildLogs, db_column=u'build_log_id')
 	SummeryText = models.TextField(db_column=u'summery_text')
 	class Meta:
 		db_table = u'build_logs_qa'
@@ -225,7 +232,8 @@ class BuildLogsQa(models.Model):
 		return u'BuildLogId : %s, SummeryText : %s' % (self.BuildLogId, self.SummeryText)
 
 class BuildLogsRepoman(models.Model):
-	BuildLogId = models.OneToOneField(BuildLogs, primary_key=True, db_column=u'build_job_id')
+	Id = models.IntegerField(primary_key=True, db_column=u'id')
+	BuildLogId = models.ForeignKey(BuildLogs, db_column=u'build_job_id')
 	SummeryText = models.TextField(db_column=u'summery_text')
 	class Meta:
 		db_table = u'build_logs_repoman'
@@ -233,16 +241,18 @@ class BuildLogsRepoman(models.Model):
 		return u'BuildLogId : %s, SummeryText : %s' % (self.BuildLogId, self.SummeryText)
 
 class BuildLogsUse(models.Model):
-	BuildLogId = models.OneToOneField(BuildLogs, primary_key=True, db_column=u'build_log_id')
+	Id = models.IntegerField(primary_key=True, db_column=u'id')
+	BuildLogId = models.ForeignKey(BuildLogs, db_column=u'build_log_id')
 	UseId = models.ForeignKey(Uses, db_column=u'use_id')
-	Status = models.CharField(max_length=15, db_column=u'status')
+	Status = models.BooleanField(max_length=15, db_column=u'status')
 	class Meta:
 		db_table = u'build_logs_use'
 	def __unicode__(self):
 		return u'BuildLogId : %s, UseId : %s, Status : %s' % (self.BuildLogId, self.UseId, self.Status)
 
 class ConfigsEmergeOptions(models.Model):
-	ConfigId = models.OneToOneField(Configs, primary_key=True, db_column=u'config_id')
+	Id = models.IntegerField(primary_key=True, db_column=u'id')
+	ConfigId = models.ForeignKey(Configs, db_column=u'config_id')
 	EmergeOptionId = models.ForeignKey(EmergeOptions, db_column=u'eoption_id')
 	class Meta:
 		db_table = u'configs_emerge_options'
@@ -268,16 +278,17 @@ class BuildLogsErrors(models.Model):
 		return u'Id : %s, BuildLogId : %s, ErrorId : %s' % (self.Id, self.BuildLogId, self.ErrorId)
 
 class ConfigsMetadata(models.Model):
-	ConfigId = models.OneToOneField(Configs, primary_key=True, db_column=u'config_id')
+	Id =  models.IntegerField(primary_key=True, db_column=u'id')
+	ConfigId = models.ForeignKey(Configs, db_column=u'config_id')
 	Profile = models.CharField(max_length=150, db_column=u'profile')
 	KeywordId = models.ForeignKey(Keywords, db_column=u'keyword_id')
 	MakeConfText = models.TextField(db_column=u'make_conf_text')
 	Checksum = models.CharField(max_length=100, db_column=u'checksum')
-	Active = models.CharField(max_length=15, db_column=u'active')
+	Active = models.BooleanField(db_column=u'active')
 	ConfigErrorText = models.TextField(db_column=u'config_error_text')
-	Updateing = models.CharField(max_length=15, db_column=u'updateing')
+	Updateing = models.BooleanField(db_column=u'updateing')
 	Status = models.CharField(max_length=21, db_column=u'status')
-	Auto = models.CharField(max_length=15, db_column=u'auto')
+	Auto = models.BooleanField(db_column=u'auto')
 	GitWww = models.CharField(max_length=200, db_column=u'git_www')
 	TimeStamp = models.DateTimeField(db_column=u'time_stamp')
 	class Meta:
@@ -286,7 +297,8 @@ class ConfigsMetadata(models.Model):
 		return u'ConfigId : %s, Profile : %s, KeywordId : %s ,MakeConfText : %s, Checksum : %s, Active : %s, ConfigErrorText : %s, Updateing : %s, Status : %s, Auto : %s, GitWww : %s, TimeStamp : %s' % (self.ConfigId, self.Profile, self.KeywordId, self.MakeConfText, self.Checksum, self.Active, self.ConfigErrorText, self.Updateing, self.Status, self.Auto, self.GitWww, self.TimeStamp)
 
 class EbuildsIuse(models.Model):
-	EbuildId = models.OneToOneField(Ebuilds, primary_key=True, db_column=u'ebuild_id')
+	Id =  models.IntegerField(primary_key=True, db_column=u'id')
+	EbuildId = models.ForeignKey(Ebuilds, db_column=u'ebuild_id')
 	UseId = models.ManyToManyField(Uses, db_column=u'use_id')
 	Status = models.CharField(max_length=15, db_column=u'status')
 	class Meta:
@@ -295,7 +307,8 @@ class EbuildsIuse(models.Model):
 		return u'EbuildId : %s, UseId : %s, Status : %s' % (self.EbuildId, self.UseId, self.Status)
 
 class EbuildsKeywords(models.Model):
-	EbuildId = models.OneToOneField(Ebuilds, primary_key=True, db_column=u'ebuild_id')
+	Id =  models.IntegerField(primary_key=True, db_column=u'id')
+	EbuildId = models.ForeignKey(Ebuilds, db_column=u'ebuild_id')
 	KeywordId = models.ForeignKey(Keywords, db_column=u'keyword_id')
 	Status = models.CharField(max_length=24, db_column=u'status')
 	class Meta:
@@ -304,7 +317,8 @@ class EbuildsKeywords(models.Model):
 		return u'EbuildId : %s, KeywordId : %s, Status : %s' % (self.EbuildId, self.KeywordId, self.Status)
 
 class EbuildsMetadata(models.Model):
-	EbuildId = models.OneToOneField(Ebuilds, primary_key=True, db_column=u'ebuild_id')
+	Id =  models.IntegerField(primary_key=True, db_column=u'id')
+	EbuildId = models.ForeignKey(Ebuilds, db_column=u'ebuild_id')
 	Revision = models.CharField(max_length=30, db_column=u'revision')
 	class Meta:
 		db_table = u'ebuilds_metadata'
@@ -312,7 +326,8 @@ class EbuildsMetadata(models.Model):
 		return u'EbuildId : %s, Revision : %s' % (self.EbuildId, self.Revision)
 
 class EbuildsRestrictions(models.Model):
-	EbuildId = models.OneToOneField(Ebuilds, primary_key=True, db_column=u'ebuild_id')
+	Id =  models.IntegerField(primary_key=True, db_column=u'id')
+	EbuildId = models.ForeignKey(Ebuilds, primary_key=True, db_column=u'ebuild_id')
 	RestrictionId = models.ForeignKey(Restrictions, db_column=u'restriction_id')
 	class Meta:
 		db_table = u'ebuilds_restrictions'
