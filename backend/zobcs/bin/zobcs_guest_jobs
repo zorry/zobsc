@@ -1,10 +1,8 @@
 #!/usr/bin/python
 from __future__ import print_function
-
-# Get the options from the config file set in zobcs.readconf
 from zobcs.readconf import get_conf_settings
-from zobcs.ConnectionManager import connectionManager
-from zobcs.mysql_querys import add_zobcs_logs, get_config_id
+from zobcs.ConnectionManager import newConnection
+from zobcs.sqlquerys import add_zobcs_logs, get_config_id
 from zobcs.check_setup import check_configure_guest
 from zobcs.build_job import build_job_action
 from zobcs.jobs import jobs_main
@@ -21,22 +19,22 @@ def main():
 	zobcs_settings_dict=reader.read_zobcs_settings_all()
 	config = zobcs_settings_dict['zobcs_config']
 	hostname = zobcs_settings_dict['hostname']
-	CM=connectionManager()
-	conn = CM.newConnection()
-	config_id = get_config_id(conn, config, hostname)
-	add_zobcs_logs(conn, "Job and build deamon started.", "info", config_id)
-	init_build_job = build_job_action(conn, config_id)
+	Session = sessionmaker(bind=NewConnection(zobcs_settings_dict))
+	session = Session()
+	config_id = get_config_id(session, config, hostname)
+	add_zobcs_logs(session, "Job and build deamon started.", "info", config_id)
+	init_build_job = build_job_action(session, config_id)
 	while repeat:
-		if not conn.is_connected() is True:
-			conn.reconnect(attempts=2, delay=1)
-		jobs_main(conn, config)
-		if check_configure_guest(conn, config_id) is not True:
-			time.sleep(6)
+		jobs_main(session, config)
+		if check_configure_guest(session, config_id) is not True:
+			time.sleep(10)
 			continue
 		else:
-			p = Process(target=init_build_job.procces_build_jobs,)
-			p.start()
-			p.join()
+			init_build_job.procces_build_jobs()
+			#p = Process(target=init_build_job.procces_build_jobs,)
+			#p.start()
+			#p.join()
+			time.sleep(30)
 			repeat = True
 	conn.close
 

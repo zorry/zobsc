@@ -53,7 +53,7 @@ def check_make_conf(conn):
 	log_msg = "Checking configs for changes and errors ... Done"
 	add_zobcs_logs(conn, log_msg, "info", _config_id)
 
-def check_make_conf_guest(conn, config_id):
+def check_make_conf_guest(session, config_id):
 	make_conf_file = "/etc/portage/make.conf"
 	# Check if we can open the file and close it
 	# Check if we have some error in the file (portage.util.getconfig)
@@ -66,7 +66,7 @@ def check_make_conf_guest(conn, config_id):
 		# With errors we return false
 	except Exception as e:
 		return False
-	make_conf_checksum_db = get_profile_checksum(conn, config_id)
+	make_conf_checksum_db = get_profile_checksum(session, config_id)
 	if make_conf_checksum_db is None:
 		return False
 	print('make_conf_checksum_tree', make_conf_checksum_tree)
@@ -75,7 +75,7 @@ def check_make_conf_guest(conn, config_id):
 		return False
 	return True
 
-def check_configure_guest(conn, config_id):
+def check_configure_guest(session, config_id):
 	pass_make_conf = check_make_conf_guest(conn, config_id)
 	print(pass_make_conf)
 	return pass_make_conf

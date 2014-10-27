@@ -7,12 +7,9 @@ portage.proxy.lazyimport.lazyimport(globals(),
 )
 from portage.exception import PackageSetNotFound
 
-from zobcs.ConnectionManager import connectionManager
 from zobcs.build_log import log_fail_queru
 
-def build_mydepgraph(settings, trees, mtimedb, myopts, myparams, myaction, myfiles, spinner, build_dict):
-	CM2=connectionManager()
-	conn2 = CM2.newConnection()
+def build_mydepgraph(settings, trees, mtimedb, myopts, myparams, myaction, myfiles, spinner, build_dict, session):
 	try:
 		success, mydepgraph, favorites = backtrack_depgraph(
 		settings, trees, myopts, myparams, myaction, myfiles, spinner)
@@ -48,10 +45,7 @@ def build_mydepgraph(settings, trees, mtimedb, myopts, myparams, myaction, myfil
 				mydepgraph.display_problems()
 				if repeat_times is 2:
 					repeat = False
-					if not conn2.is_connected() is True:
-						conn2.reconnect(attempts=2, delay=1)
-					log_fail_queru(conn2, build_dict, settings)
-					conn2.close
+					log_fail_queru(session, build_dict, settings)
 				else:
 					repeat_times = repeat_times + 1
 					settings, trees, mtimedb = load_emerge_config()
