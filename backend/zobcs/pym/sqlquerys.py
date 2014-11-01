@@ -6,6 +6,7 @@ from zobcs.db_mapping import Configs, Logs, ConfigsMetaData, Jobs, BuildJobs, Pa
 	BuildJobsEmergeOptions
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
+# Guest Functions
 def get_config_id(session, config, host):
 	ConfigInfo = session.query(Configs).filter_by(Config = config).filter_by(Hostname = host).one()
 	return ConfigInfo.ConfigId
@@ -25,14 +26,14 @@ def update_job(session, status, job):
 	job.Status = status
 	session.commit()
 
-def get_config_id_list_all(session):
-	return session.query(Configs.ConfigId).all()
+def get_config_all_info(session):
+	return session.query(Configs).all()
 
-def get_config(session, config_id):
-	ConfigInfo = session.query(Configs).filter_by(ConfigId = config_id)
-	return ConfigInfo.Hostname, Config
+def get_config_info(session, config_id):
+	ConfigInfo = session.query(Configs).filter_by(ConfigId = config_id).one()
+	return ConfigInfo
 
-def get_profile_checksum(session, config_id):
+def get_configmetadata_info(session, config_id):
 	return session.query(ConfigsMetaData).filter_by(ConfigId = config_id).one()
 
 def get_packages_to_build(session, config_id):
@@ -80,20 +81,31 @@ def get_packages_to_build(session, config_id):
 	build_dict['emerge_options'] = emerge_options_list
 	return build_dict
 
-def get_category_id(session, category):
-	return session.query(Categories.CategoryId).filter_by(Category = category).filter_by(Active = True).one()[0]
+def get_category_info(session, category):
+	try:
+		CategoryInfo = session.query(Categories).filter_by(Category = category).filter_by(Active = True).one()
+	except NoResultFound as e:
+		return False
+	return CategoryInfo
 
-def get_repo_id(session, repo):
-	return session.query(Repos.RepoId).filter_by(Repo = repo).one()[0]
+def get_repo_info(session, repo):
+	try:
+		RepoInfo = session.query(Repos).filter_by(Repo = repo).one()
+	except NoResultFound as e:
+		return False
+	return RepoInfo
 
-def get_package_id(session, categories, package, repo):
-	category_id = get_category_id(session, categories)
-	repo_id = get_repo_id(session, repo)
-	return session.query(Packages.PackageId).filter_by(Package = package).filter_by(RepoId = repo_id).filter_by(CategoryId = category_id).one()[0]
+def get_package_info(session, categories, package, repo):
+	CategoriesInfo = get_category_info(session, categories)
+	ReposInfo = get_repo_info(session, repo)
+	try:
+		PackagesInfo = session.query(Packages).filter_by(CategoryId = CategoriesInfo.CategoryId).filter_by(RepoId = RepoInfo.RepoId).filter_by(Active = True).one()
+	except NoResultFound as e:
+		return False
+	return Packages
 
-def get_ebuild_id_db(session, build_dict):
-	ebuild_id_list = []
-	EbuildInfo = session.query(Ebuilds.EbuildId).filter_by(Version = build_dict['ebuild_version']).filter_by(Checksum = build_dict['checksum']).\
+def get_ebuild_info(session, build_dict):
+	EbuildInfo = session.query(Ebuilds).filter_by(Version = build_dict['ebuild_version']).filter_by(Checksum = build_dict['checksum']).\
 		filter_by(PackageId = build_dict['package_id']).filter_by(Active = True)
 	if EbuildInfo.all() == []:
 		return None, True
@@ -121,10 +133,10 @@ def get_build_job_id(session, build_dict):
 
 def get_use_id(session, use_flag):
 	try:
-		UseIdInfo = session.query(Uses.UseId).filter_by(Flag = use_flag).one()
+		UseIdInfo = session.query(Uses).filter_by(Flag = use_flag).one()
 	except NoResultFound as e:
 		return None
-	return UseIdInfo[0]
+	return UseIdInfo.UseId
 
 def get_hilight_info(session):
 	return session.query(HiLight).all()
@@ -244,3 +256,189 @@ def add_fail_times(session, fail_querue_dict):
 	NewBuildJobs = session.query(BuildJobs).filter_by(BuildJobId = fail_querue_dict['build_job_id']).one()
 	NewBuildJobs.TimeStamp = datetime.datetime.utcnow()
 	session.commit()
+
+# Host Functions
+def update_repo_db(session, repo_list):
+	for repo in repo_list:
+		if not get_repo_info(session, repo):
+			session.add(Repos(Repo = repo))
+			session.commit()
+
+def update_categories_db(session, category):
+	if not get_category_info(session, category)
+	session.add(Categories(Category = category))
+	session.commit()
+
+def get_keyword_id(session, keyword):
+	try:
+		KeywordsInfo = session.query(Keywords).filter_by(Keyword = keyword).one()
+	except NoResultFound as e:
+		return None
+	return KeywordsInfo.KeywordId
+
+def add_new_ebuild_metadata_sql(session, ebuild_id, keywords, restrictions, iuse_list):
+	for restriction in restrictions:
+		if restriction in ["!"]:
+			restriction = restriction[1:]
+		if restriction in ["?"]:
+			restriction = restriction[:1]
+		if restriction != '(' or restriction != ')':
+			try:
+				RestrictionInfo = session.query(Restrictions).filter_by(Restriction = restriction).one()
+			except NoResultFound, e:
+				session.add(Restrictions(Restriction = restriction))
+				session.commit()
+				RestrictionInfo = session.query(Restrictions).filter_by(Restriction = restriction).one()
+			session.add(EbuildsRestrictions(EbuildId = ebuild_id, RestrictionId = RestrictionInfo.RestrictionId))
+			session.commit()
+	for iuse in iuse_list:
+		status = False
+		if iuse[0] in ["+"]:
+			iuse = iuse[1:]
+			status = True
+		elif iuse[0] in ["-"]:
+			iuse = iuse[1:]
+		use_id = get_use_id(session, iuse)
+		if use_id is None:
+			session.add(Uses(Use = iuse))
+			session.commit()
+			use_id = get_use_id(session, iuse)
+		session.add(EbuildsIuse(EbuildId = ebuild_id, UseId = use_id, Status = status))
+		session.commit()
+	for keyword in keywords:
+		status = 'Stable'
+		if keyword[0] in ["~"]:
+			keyword = keyword[1:]
+			status = 'Unstable'
+		elif keyword[0] in ["-"]:
+			keyword = keyword[1:]
+			status = 'Negative'
+		keyword_id = get_keyword_id(connection, keyword)
+		if keyword_id is None:
+			session.add(Keywords(Keyword = keyword)
+			session.commit()
+			keyword_id = get_keyword_id(connection, keyword)
+		session.add(EbuildsKeywords(EbuildId = ebuild_id, KeywordId = keyword_id, Status = status)) 
+		session.commit()
+
+def add_new_ebuild_sql(session, packageDict):
+	ebuild_id_list = []
+	for k, v in packageDict.iteritems():
+		session.add(Ebuilds(PackageId = v['package_id'], Version = v['ebuild_version'], Checksum = v['checksum'], Active = True))
+		session.commit()
+		EbuildInfo, x = get_ebuild_info(session, v)
+		session.add(EbuildsMetadata(EbuildId = EbuildInfo.EbuildId, Revision = v['ebuild_version_revision_tree']))
+		session.commit()
+		ebuild_id_list.append(EbuildInfo.EbuildId)
+		restrictions = []
+		keywords = []
+		iuse = []
+		for i in v['ebuild_version_metadata_tree'][4].split():
+			restrictions.append(i)
+		for i in v['ebuild_version_metadata_tree'][8].split():
+			keywords.append(i)
+		for i in v['ebuild_version_metadata_tree'][10].split():
+			iuse.append(i)
+		add_new_ebuild_metadata_sql(session, ebuild_id, keywords, restrictions, iuse)
+	return ebuild_id_list
+
+def get_ebuild_id_list(session, package_id):
+	ebuild_id_list = []
+	for EbuildInfo in session.query(Ebuilds).filter_by(PackageId = package_id).filter_by(Active = True).all():
+		ebuild_id_list.append(EbuildInfo.EbuildId)
+	return ebuild_id_list
+
+def get_build_job_all(session, ebuild_id):
+	return session.query(BuildJobs).filter_by(EbuildId = ebuild_id).all()
+
+def add_old_ebuild(session, package_id, old_ebuild_list):
+	sqlQ1 = "UPDATE ebuilds SET active = 'False' WHERE ebuild_id = %s"
+	sqlQ3 = "SELECT build_job_id FROM build_jobs WHERE ebuild_id = %s"
+	for ebuild_id in  old_ebuild_list:
+		EbuildInfo = session.query(Ebuilds).filter_by(EbuildId = ebuild_id).one()
+		EbuildInfo.Active = False
+		session.commit()
+		build_job_id_list = get_build_job_all(session, ebuild_id)
+		if build_job_id_list != []:
+			for build_job in build_job_id_list:
+				del_old_build_jobs(session, build_job.BuildJobId)
+
+def get_package_metadata_sql(session, package_id):
+	sqlQ ='SELECT checksum FROM packages_metadata WHERE package_id = %s'
+	try:
+		PackagesMetadataInfo = session.query(PackagesMetadata).filter_by(PackageId = package_id).one()
+	except NoResultFound as e:
+		return None
+	return PackagesMetadataInfo
+
+def update_email_info(session, email):
+	try:
+		EmailInfo = session.query(Emails).filter_by(Email = email).one()
+	except NoResultFound as e:
+		session.add(Emails(Email = email))
+		session.commit()
+		EmailInfo = session.query(Emails).filter_by(Email = email).one()
+	return EmailInfo
+
+def update_package_email_info(session, email_id, package_id):
+	try:
+		PackagesEmailInfo = session.query(PackageEmails).filter_by(Email = email).filter_by(PackageId = package_id).one()
+	except NoResultFound as e:
+		session.add(PackagesEmails(Email = email, PackageId = package_id))
+		session.commit()
+		PackagesEmailInfo = session.query(PackageEmails).filter_by(EmailId = email_id).filter_by(PackageId = package_id).one()
+	return PackagesEmailInfo
+
+def update_package_metadata(session, package_metadataDict):
+	for k, v in package_metadataDict.iteritems():
+		try:
+			PackagesMetadataInfo = session.query(PackagesMetadata).filter_by(PackageId = k).one()
+		except NoResultFound as e:
+			session.add(PackagesMetadata(PackageId = k, Checksum = v['metadata_xml_checksum']))
+			session.commit()
+		else:
+			PackagesMetadataInfo.Checksum = v['metadata_xml_checksum']
+			session.commit()
+		if v['metadata_xml_email']:
+			for email in v['metadata_xml_email']
+				EmailInfo = update_email_info(session, email)
+				PackagesEmailInfo = update_package_email_info(session, EmailInfo.EmailId, k)
+
+def update_manifest_sql(session, package_id, manifest_checksum_tree):
+	PackagesInfo = session.query(Packages).filter_by(PackageId = package_id).one()
+	PackagesInfo.Checksum = manifest_checksum_tree
+	session.commit()
+
+def get_package_info_from _package_id(session, package_id):
+	return PackagesInfo = session.query(Packages).filter_by(PackageId = package_id).one()
+
+def add_new_build_job(session, ebuild_id, config_id, use_flagsDict):
+	NewBuildJobs =BuildJobs(EbuildId = ebuild_id, ConfigId = config_id, Status = 'Waiting', BuildNow = False, RemoveBin = True)
+	session.add(NewBuildJobs)
+	session.flush()
+	build_job_id = NewBuildJobs.BuildJobId
+	session.commit()
+	for k, v in use_flagsDict.iteritems():
+		use_id = get_use_id(session, k)
+		session.add(BuildJobsUse(BuildJobId = build_job_id, UseId = use_id, Status = v))
+		session.commit()
+
+def get_ebuild_checksums(session, package_id, ebuild_version):
+	EbuildInfo = session.query(Ebuilds).filter_by(PackageId = package_id).filter_by(Version = ebuild_version).filter_by(Active = True)
+	ebuild_checksum_list = []
+	if EbuildInfo.all() == []:
+		return None
+	try:
+		EbuildInfo2 = EbuildInfo.one()
+	except (MultipleResultsFound) as e:
+		for EbuildInfo3 in EbuildInfo.all()
+			ebuild_checksum_list.append(EbuildInfo3.Checksum)
+	return ebuild_checksum_list.append(EbuildInfo2.Checksum)
+
+def get_ebuild_id_db(session, checksum, package_id):
+	sqlQ = "SELECT ebuild_id FROM ebuilds WHERE package_id = %s AND checksum = %s"
+	EbuildInfos = EbuildInfo = session.query(Ebuilds).filter_by(PackageId = package_id).filter_by(Checksum = checksum).all()
+	ebuilds_id = []
+	for EbuildInfo in EbuildInfos:
+		ebuilds_id.append(EbuildInfo.EbuildId)
+	return ebuilds_id

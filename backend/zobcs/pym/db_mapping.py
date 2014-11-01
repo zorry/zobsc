@@ -16,6 +16,7 @@ class Configs(Base):
 	Config = Column('config', String(100))
 	DefaultConfig = Column('default_config', Boolean, default=False)
 	__tablename__ = 'configs'
+	 ConfigsMetaData= relationship("ConfigsMetaData", backref=backref('configs', order_by=config_id))
 	
 class Logs(Base):
 	LogId = Column('log_id', Integer, primary_key=True)
@@ -52,16 +53,16 @@ class ConfigsMetaData(Base):
 	__tablename__ = 'configs_metadata'
 
 class Categories(Base):
-	__tablename__ = 'categories'
 	CategoryId = Column('category_id', Integer, primary_key=True)
 	Category = Column('category', String(150))
 	Active = Column('active', Boolean, default=False)
 	TimeStamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
+	__tablename__ = 'categories'
 
 class Repos(Base):
-	__tablename__ = 'repos'
 	RepoId = Column('repo_id', Integer, primary_key=True)
 	Repo = Column('repo', String(100))
+	__tablename__ = 'repos'
 
 class Packages(Base):
 	PackageId = Column('package_id', Integer, primary_key=True)
@@ -72,10 +73,23 @@ class Packages(Base):
 	Active = Column('active', Boolean, default=False)
 	TimeStamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 	__tablename__ = 'packages'
+	Categories = relationship("Categories", backref=backref('packages', order_by=package_id))
+	Repos = relationship("Repos", backref=backref('packages', order_by=package_id))
+
+class Emails(Base):
+	EmailId = Column('email_id', Integer, primary_key=True)
+	Email = Column('email', String(150))
+	__tablename__ = 'emails'
+
+class PackagesEmails(Base):
+	Id = Column('id', Integer, primary_key=True)
+	PackageId = Column('package_id', Integer, ForeignKey('packages.package_id'))
+	EmailId = Column('email_id', Integer, ForeignKey('emails.email_id'))
+	__tablename__ = 'packages_emails'
 
 class PackagesMetadata(Base):
-	PackageId = Column('package_id', Integer, ForeignKey('packages.package_id'), primary_key=True)
-	Email = Column('email', String(150))
+	Id = Column('id', Integer, primary_key=True)
+	PackageId = Column('package_id', Integer, ForeignKey('packages.package_id'))
 	Checksum = Column('checksum', String(100))
 	__tablename__ = 'packages_metadata'
 
@@ -204,3 +218,35 @@ class BuildLogsErrors(Base):
 	BuildLogId = Column('build_log_id', Integer, ForeignKey('build_logs.build_log_id'))
 	ErrorId = Column('error_id', Integer, ForeignKey('errors_info.error_id'))
 	__tablename__ = 'build_logs_errors'
+
+class Restrictions(Base):
+	RestrictionId = Column('restriction_id', Integer, primary_key=True)
+	Restriction = Column('restriction', String(150))
+	__tablename__ = 'restrictions'
+
+class EbuildsRestrictions(Base):
+	Id =  Column('id', Integer, primary_key=True)
+	EbuildId = Column('ebuild_id', ForeignKey('ebuilds.ebuild_id'))
+	RestrictionId = Column('restriction_id', ForeignKey('restrictions.restriction_id')
+	__tablename__ = 'ebuilds_restrictions'
+
+class EbuildsIuse(Base):
+	Id =  Column('id', Integer, primary_key=True)
+	EbuildId = Column('ebuild_id', ForeignKey('ebuilds.ebuild_id'))
+	UseId = Column('use_id', ForeignKey('uses.use_id'))
+	Status = Column('status', Boolean, default=False)
+	__tablename__= 'ebuilds_iuse'
+
+class EbuildsKeywords(Base):
+	Id =  models.IntegerField('id', Integer, primary_key=True)
+	EbuildId = Column('ebuild_id', ForeignKey('ebuilds.ebuild_id'))
+	KeywordId = Column('keyword_id', ForeignKey('keywords.keyword_id'))
+	Status = Column('status', Enum('Stable','Unstable','Negative'))
+	class Meta:
+		db_table = u'ebuilds_keywords'
+
+class EbuildsMetadata(Base):
+	Id =  Column('id', Integer, primary_key=True)
+	EbuildId = Column('ebuild_id', ForeignKey('ebuilds.ebuild_id')
+	Revision = Column('revision', String(30))
+	__tablename__ = 'ebuilds_metadata'

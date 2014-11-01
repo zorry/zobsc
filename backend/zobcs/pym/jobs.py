@@ -68,7 +68,7 @@ def jobs_main(session, config_id):
 			update_job_list(session, "Runing", job)
 			log_msg = "Job %s is runing." % (job.JobId,)
 			add_zobcs_logs(session, log_msg, "info", config_id)
-			result = update_db_main(session)
+			result = update_db_main(session, config_id)
 			if result is True:
 				update_job_list(session, "Done", job)
 				log_msg = "Job %s is done.." % (job.JobId,)
