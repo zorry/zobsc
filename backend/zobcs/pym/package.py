@@ -261,7 +261,7 @@ class zobcs_package(object):
 	def update_package_db(self, package_id):
 		# Update the categories and package with new info
 		# C = Checking
-		PackagesInfo = get_package_info_from _package_id(self._session, package_id)
+		PackagesInfo = get_package_info_from_package_id(self._session, package_id)
 		cp = PackagesInfo.Categories.Category + '/' + PackagesInfo.Package
 		repo = PackagesInfo.Repos.Pepo
 		log_msg = "C %s:%s" % (cp, repo)

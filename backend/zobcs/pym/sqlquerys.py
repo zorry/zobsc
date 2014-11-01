@@ -265,9 +265,9 @@ def update_repo_db(session, repo_list):
 			session.commit()
 
 def update_categories_db(session, category):
-	if not get_category_info(session, category)
-	session.add(Categories(Category = category))
-	session.commit()
+	if not get_category_info(session, category):
+		session.add(Categories(Category = category))
+		session.commit()
 
 def get_keyword_id(session, keyword):
 	try:
@@ -315,7 +315,7 @@ def add_new_ebuild_metadata_sql(session, ebuild_id, keywords, restrictions, iuse
 			status = 'Negative'
 		keyword_id = get_keyword_id(connection, keyword)
 		if keyword_id is None:
-			session.add(Keywords(Keyword = keyword)
+			session.add(Keywords(Keyword = keyword))
 			session.commit()
 			keyword_id = get_keyword_id(connection, keyword)
 		session.add(EbuildsKeywords(EbuildId = ebuild_id, KeywordId = keyword_id, Status = status)) 
@@ -400,7 +400,7 @@ def update_package_metadata(session, package_metadataDict):
 			PackagesMetadataInfo.Checksum = v['metadata_xml_checksum']
 			session.commit()
 		if v['metadata_xml_email']:
-			for email in v['metadata_xml_email']
+			for email in v['metadata_xml_email']:
 				EmailInfo = update_email_info(session, email)
 				PackagesEmailInfo = update_package_email_info(session, EmailInfo.EmailId, k)
 
@@ -410,7 +410,7 @@ def update_manifest_sql(session, package_id, manifest_checksum_tree):
 	session.commit()
 
 def get_package_info_from_package_id(session, package_id):
-	return PackagesInfo = session.query(Packages).filter_by(PackageId = package_id).one()
+	return session.query(Packages).filter_by(PackageId = package_id).one()
 
 def add_new_build_job(session, ebuild_id, config_id, use_flagsDict):
 	NewBuildJobs =BuildJobs(EbuildId = ebuild_id, ConfigId = config_id, Status = 'Waiting', BuildNow = False, RemoveBin = True)
@@ -431,7 +431,7 @@ def get_ebuild_checksums(session, package_id, ebuild_version):
 	try:
 		EbuildInfo2 = EbuildInfo.one()
 	except (MultipleResultsFound) as e:
-		for EbuildInfo3 in EbuildInfo.all()
+		for EbuildInfo3 in EbuildInfo.all():
 			ebuild_checksum_list.append(EbuildInfo3.Checksum)
 	return ebuild_checksum_list.append(EbuildInfo2.Checksum)
 

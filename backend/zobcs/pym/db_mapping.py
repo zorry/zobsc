@@ -247,6 +247,6 @@ class EbuildsKeywords(Base):
 
 class EbuildsMetadata(Base):
 	Id =  Column('id', Integer, primary_key=True)
-	EbuildId = Column('ebuild_id', ForeignKey('ebuilds.ebuild_id')
+	EbuildId = Column('ebuild_id', ForeignKey('ebuilds.ebuild_id'))
 	Revision = Column('revision', String(30))
 	__tablename__ = 'ebuilds_metadata'
