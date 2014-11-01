@@ -246,7 +246,7 @@ def update_fail_times(session, FailInfo):
 def get_fail_times(session, build_dict):
 	try:
 		FailInfo = session.query(BuildJobsRedo).filter_by(BuildJobId = build_dict['build_job_id']).filter_by(FailType = build_dict['type_fail']).one()
-	except NoResultFound, e:
+	except NoResultFound as e:
 		return None
 	return FailInfo
 

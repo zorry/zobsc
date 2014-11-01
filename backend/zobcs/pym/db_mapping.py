@@ -227,7 +227,7 @@ class Restrictions(Base):
 class EbuildsRestrictions(Base):
 	Id =  Column('id', Integer, primary_key=True)
 	EbuildId = Column('ebuild_id', ForeignKey('ebuilds.ebuild_id'))
-	RestrictionId = Column('restriction_id', ForeignKey('restrictions.restriction_id')
+	RestrictionId = Column('restriction_id', ForeignKey('restrictions.restriction_id'))
 	__tablename__ = 'ebuilds_restrictions'
 
 class EbuildsIuse(Base):

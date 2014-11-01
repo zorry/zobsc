@@ -188,7 +188,7 @@ class zobcs_package(object):
 		for ebuild_id in ebuild_id_list:
 			new_ebuild_id_list.append(ebuild_id)
 		for ebuild_id in get_ebuild_id_list(self._session, package_id):
-			if not ebuild_id new_ebuild_id_list:
+			if not ebuild_id in new_ebuild_id_list:
 				if not ebuild_id in old_ebuild_id_list:
 					old_ebuild_id_list.append(EbuildInfo.EbuildId)
 		if not old_ebuild_id_list == []:
