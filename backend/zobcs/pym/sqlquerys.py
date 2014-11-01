@@ -185,7 +185,7 @@ def add_new_buildlog(session, build_dict, build_log_dict):
 			if log_hash[0] == build_log_dict['log_hash'] and build_dict['build_useflags'] == useflagsdict:
 				if session.query(BuildLogsConfig).filter(BuildLogsConfig.ConfigId.in_([build_dict['config_id']])).filter_by(BuildLogId = build_log_id[0]):
 					return None, True
-				NewBuildLogConfig = BuildLogsConfig(BuildLogId = build_log_id[0], ConfigId = build_dict['config_id'], LogName = build_log_dict['logfilename'], EInfoId = build_log$
+				NewBuildLogConfig = BuildLogsConfig(BuildLogId = build_log_id[0], ConfigId = build_dict['config_id'], LogName = build_log_dict['logfilename'], EInfoId = build_log)
 				session.add(NewBuildLogConfig)
 				session.commit()
 				return build_log_id[0], True
@@ -409,7 +409,7 @@ def update_manifest_sql(session, package_id, manifest_checksum_tree):
 	PackagesInfo.Checksum = manifest_checksum_tree
 	session.commit()
 
-def get_package_info_from _package_id(session, package_id):
+def get_package_info_from_package_id(session, package_id):
 	return PackagesInfo = session.query(Packages).filter_by(PackageId = package_id).one()
 
 def add_new_build_job(session, ebuild_id, config_id, use_flagsDict):

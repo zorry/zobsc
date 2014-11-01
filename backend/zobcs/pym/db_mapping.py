@@ -16,7 +16,7 @@ class Configs(Base):
 	Config = Column('config', String(100))
 	DefaultConfig = Column('default_config', Boolean, default=False)
 	__tablename__ = 'configs'
-	 ConfigsMetaData= relationship("ConfigsMetaData", backref=backref('configs', order_by=config_id))
+	ConfigsMetaData= relationship("ConfigsMetaData", backref=backref('configs', order_by=config_id))
 	
 class Logs(Base):
 	LogId = Column('log_id', Integer, primary_key=True)

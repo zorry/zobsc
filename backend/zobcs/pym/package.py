@@ -8,7 +8,7 @@ from zobcs.flags import zobcs_use_flags
 from zobcs.sqlquerys import add_zobcs_logs, get_package_info, get_config_info, \
 	add_new_build_job, add_new_ebuild_sql, get_ebuild_id_list, add_old_ebuild, \
 	get_package_metadata_sql, update_package_metadata, update_manifest_sql, \
-	get_package_info_from _package_id, get_config_id_list, add_new_manifest_sql, \
+	get_package_info_from_package_id, get_config_id_list, add_new_manifest_sql, \
 	get_ebuild_checksums, get_ebuild_id_db
 from zobcs.readconf import get_conf_settings
 
@@ -202,7 +202,7 @@ class zobcs_package(object):
 		update_manifest_sql(self._session, package_id, manifest_checksum_tree)
 
 		# Get the best cpv for the configs and add it to config_cpv_listDict
-		PackagesInfo = get_package_info_from _package_id(self._session, package_id)
+		PackagesInfo = get_package_info_from_package_id(self._session, package_id)
 		c = PackagesInfo.Categories.Category
 		p = PackagesInfo.Package
 		config_all_info  = get_config_id_list(self._session)

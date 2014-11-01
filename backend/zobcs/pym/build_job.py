@@ -82,11 +82,11 @@ class build_job_action(object):
 		# We remove the binary package if removebin is true
 		if build_dict['removebin']:
 			package = build_dict['package']
-                        pv = package + "-" + build_dict['ebuild_version']
-                        binfile = settings['PKGDIR'] + "/" + build_dict['category'] + "/" + pv + ".tbz2"
-                        try:
-                                os.remove(binfile)
-                        except:
+			pv = package + "-" + build_dict['ebuild_version']
+			binfile = settings['PKGDIR'] + "/" + build_dict['category'] + "/" + pv + ".tbz2"
+			try:
+				os.remove(binfile)
+			except:
 				log_msg = "Binary file was not removed or found: %s" % (binfile,)
 				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 

@@ -638,7 +638,7 @@ def add_new_buildlog(connection, build_dict, build_log_dict):
 					config_id_list.append(config_id[0])
 				if build_dict['config_id'] in config_id_list:
 					return None, True
-				cursor.execute(sqlQ4, (build_log_id, build_dict['config_id'], build_log_dict['logfilename'], build_log_dict['einfo_id'].))
+				cursor.execute(sqlQ4, (build_log_id, build_dict['config_id'], build_log_dict['logfilename'], build_log_dict['einfo_id'],))
 				return build_log_id, True
 		return None, False
 

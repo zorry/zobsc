@@ -11,7 +11,7 @@ def NewConnection(zobcs_settings_dict):
 		try:
 			from sqlalchemy import create_engine
 		except ImportError:
-                	print("Please install a recent version of dev-python/mysql-connector-python for Python")
+			print("Please install a recent version of dev-python/sqlalchemy for Python")
 			sys.exit(1)
 		logging.basicConfig()
 		logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
