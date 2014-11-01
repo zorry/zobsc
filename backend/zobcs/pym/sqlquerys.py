@@ -285,7 +285,7 @@ def add_new_ebuild_metadata_sql(session, ebuild_id, keywords, restrictions, iuse
 		if restriction != '(' or restriction != ')':
 			try:
 				RestrictionInfo = session.query(Restrictions).filter_by(Restriction = restriction).one()
-			except NoResultFound, e:
+			except NoResultFound as e:
 				session.add(Restrictions(Restriction = restriction))
 				session.commit()
 				RestrictionInfo = session.query(Restrictions).filter_by(Restriction = restriction).one()
