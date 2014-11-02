@@ -16,7 +16,7 @@ class Configs(Base):
 	Config = Column('config', String(100))
 	DefaultConfig = Column('default_config', Boolean, default=False)
 	__tablename__ = 'configs'
-	ConfigsMetaData= relationship("ConfigsMetaData", backref=backref('configs', order_by=config_id))
+	ConfigsMetaData= relationship("ConfigsMetaData", backref=backref('configs', order_by='config_id'))
 	
 class Logs(Base):
 	LogId = Column('log_id', Integer, primary_key=True)
@@ -73,8 +73,8 @@ class Packages(Base):
 	Active = Column('active', Boolean, default=False)
 	TimeStamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 	__tablename__ = 'packages'
-	Categories = relationship("Categories", backref=backref('packages', order_by=package_id))
-	Repos = relationship("Repos", backref=backref('packages', order_by=package_id))
+	Categories = relationship("Categories", backref=backref('packages', order_by='package_id'))
+	Repos = relationship("Repos", backref=backref('packages', order_by='package_id'))
 
 class Emails(Base):
 	EmailId = Column('email_id', Integer, primary_key=True)
@@ -101,7 +101,7 @@ class Ebuilds(Base):
 	Active = Column('active', Boolean, default=False)
 	TimeStamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 	__tablename__ = 'ebuilds'
-	Packages = relationship("Packages", backref=backref('ebuilds', order_by=PackageId))
+	Packages = relationship("Packages", backref=backref('ebuilds', order_by='ebuild_id'))
 
 class EmergeOptions(Base):
 	EmergeOptionId = Column('eoption_id', Integer, primary_key=True)
@@ -124,12 +124,14 @@ class BuildJobs(Base):
 	__tablename__ = 'build_jobs'
 
 class BuildJobsEmergeOptions(Base):
-	BuildJobId = Column('build_job_id', Integer, ForeignKey('build_jobs.build_job_id'), primary_key=True)
+	Id = Column('id', Integer, primary_key=True)
+	BuildJobId = Column('build_job_id', Integer, ForeignKey('build_jobs.build_job_id'))
 	EOption = Column('eoption_id', Integer, ForeignKey('emerge_options.eoption_id'))
 	__tablename__ = 'build_jobs_emerge_options'
 
 class BuildJobsRedo(Base):
-	BuildJobId = Column('build_job_id', Integer, ForeignKey('build_jobs.build_job_id'), primary_key=True)
+	Id = Column('id', Integer, primary_key=True)
+	BuildJobId = Column('build_job_id', Integer, ForeignKey('build_jobs.build_job_id'))
 	FailTimes = Column('fail_times', Integer)
 	FailType = Column('fail_type', String(50))
 	TimeStamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
@@ -196,7 +198,8 @@ class BuildLogsHiLight(Base):
 	__tablename__ = 'build_logs_hilight'
 
 class BuildLogsEmergeOptions(Base):
-	BuildLogId = Column('build_log_id', Integer, ForeignKey('Build_logs.Build_log_id'), primary_key=True)
+	Id = Column('id', Integer, primary_key=True)
+	BuildLogId = Column('build_log_id', Integer, ForeignKey('Build_logs.Build_log_id'))
 	EmergeOptionId = Column('eoption_id', Integer, ForeignKey('emerge_options.eoption_id'))
 	__tablename__ = 'build_logs_emerge_options'
 
@@ -238,11 +241,11 @@ class EbuildsIuse(Base):
 	__tablename__= 'ebuilds_iuse'
 
 class EbuildsKeywords(Base):
-	Id =  models.IntegerField('id', Integer, primary_key=True)
+	Id =  Column('id', Integer, primary_key=True)
 	EbuildId = Column('ebuild_id', ForeignKey('ebuilds.ebuild_id'))
 	KeywordId = Column('keyword_id', ForeignKey('keywords.keyword_id'))
 	Status = Column('status', Enum('Stable','Unstable','Negative'))
-	__tablename___ = 'ebuilds_keywords'
+	__tablename__ = 'ebuilds_keywords'
 
 class EbuildsMetadata(Base):
 	Id =  Column('id', Integer, primary_key=True)
