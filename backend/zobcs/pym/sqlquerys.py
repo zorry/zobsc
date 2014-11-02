@@ -22,8 +22,13 @@ def get_jobs(session, config_id):
 		return None
 	return JobInfo
 
-def update_job(session, status, job):
-	job.Status = status
+def get_job(session, job_id):
+	JobInfo = session.query(Jobs).filter_by(JobId = job_id).one()
+	return JobInfo.JobType, JobInfo.RunConfigId
+
+def update_job_list(session, status, job_id):
+	JobInfo = session.query(Jobs).filter_by(JobId = job_id).one()
+	JobInfo.Status = status
 	session.commit()
 
 def get_config_all_info(session):

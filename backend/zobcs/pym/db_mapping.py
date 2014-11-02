@@ -242,8 +242,7 @@ class EbuildsKeywords(Base):
 	EbuildId = Column('ebuild_id', ForeignKey('ebuilds.ebuild_id'))
 	KeywordId = Column('keyword_id', ForeignKey('keywords.keyword_id'))
 	Status = Column('status', Enum('Stable','Unstable','Negative'))
-	class Meta:
-		db_table = u'ebuilds_keywords'
+	__tablename___ = 'ebuilds_keywords'
 
 class EbuildsMetadata(Base):
 	Id =  Column('id', Integer, primary_key=True)
