@@ -5,8 +5,7 @@ import errno
 
 from portage.exception import DigestException, FileNotFound, ParseError, PermissionDenied
 from zobcs.text import get_file_text
-from zobcs.sqlquerys import get_config_all_info, add_zobcs_logs, \
-	update_make_conf, get_configmetadata_info
+from zobcs.sqlquerys import get_config_all_info, add_zobcs_logs, get_configmetadata_info
 
 def check_make_conf(session, config_id, zobcs_settings_dict):
 	log_msg = "Checking configs for changes and errors"
@@ -17,6 +16,7 @@ def check_make_conf(session, config_id, zobcs_settings_dict):
 		# Set the config dir
 		check_config_dir = "/var/cache/zobcs/" + zobcs_settings_dict['zobcs_gitreponame'] + "/" + ConfigInfo.Hostname +"/" + ConfigInfo.Config + "/"
 		make_conf_file = check_config_dir + "etc/portage/make.conf"
+		ConfigsMetaDataInfo = get_configmetadata_info(session, ConfigInfo.ConfigId)
 		# Check if we can take a checksum on it.
 		# Check if we have some error in the file. (portage.util.getconfig)
 		# Check if we envorment error with the config. (settings.validate)
@@ -27,19 +27,19 @@ def check_make_conf(session, config_id, zobcs_settings_dict):
 			mysettings.validate()
 			# With errors we update the db on the config and disable the config
 		except ParseError as e:
-			ConfigInfo.ConfigErrorText = str(e)
-			ConfigInfo.Active = False
+			ConfigsMetaDataInfo.ConfigErrorText = str(e)
+			ConfigsMetaDataInfo.Active = False
 			log_msg = "%s FAIL!" % (ConfigInfo.Config,)
 			add_zobcs_logs(session, log_msg, "info", config_id)
 			session.commit()
 		else:
-			ConfigInfo.Active = True
+			ConfigsMetaDataInfo.Active = True
 			log_msg = "%s PASS" % (ConfigInfo.Config,)
 			add_zobcs_logs(session, log_msg, "info", config_id)
 			session.commit()
-		if make_conf_checksum_tree != ConfigInfo.Checksum:
-			ConfigInfo.MakeConfText = get_file_text(make_conf_file)
-			ConfigInfo.Checksum = make_conf_checksum_tree
+		if make_conf_checksum_tree != ConfigsMetaDataInfo.Checksum:
+			ConfigsMetaDataInfo.MakeConfText = get_file_text(make_conf_file)
+			ConfigsMetaDataInfo.Checksum = make_conf_checksum_tree
 			session.commit()
 	log_msg = "Checking configs for changes and errors ... Done"
 	add_zobcs_logs(session, log_msg, "info", config_id)

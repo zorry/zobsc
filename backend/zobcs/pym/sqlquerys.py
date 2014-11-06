@@ -3,7 +3,8 @@ import datetime
 from zobcs.db_mapping import Configs, Logs, ConfigsMetaData, Jobs, BuildJobs, Packages, Ebuilds, Repos, Categories, \
 	Uses, ConfigsEmergeOptions, EmergeOptions, HiLight, BuildLogs, BuildLogsConfig, BuildJobsUse, BuildJobsRedo, \
 	HiLightCss, BuildLogsHiLight, BuildLogsEmergeOptions, BuildLogsErrors, ErrorsInfo, EmergeInfo, BuildLogsUse, \
-	BuildJobsEmergeOptions
+	BuildJobsEmergeOptions, EbuildsMetadata, EbuildsIUse, Restrictions, EbuildsRestrictions, EbuildsKeywords, \
+        Keywords, PackagesMetadata, Emails, PackagesEmails
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 # Guest Functions
@@ -17,14 +18,10 @@ def add_zobcs_logs(session, log_msg, log_type, config_id):
 	session.commit()
 
 def get_jobs(session, config_id):
-	JobInfo = session.query(Jobs).filter_by(Status = 'Waiting').filter_by(ConfigId = config_id).order_by(Jobs.JobId).all()
-	if JobInfo == []:
+	JobsInfo = session.query(Jobs).filter_by(Status = 'Waiting').filter_by(ConfigId = config_id).order_by(Jobs.JobId).all()
+	if JobsInfo == []:
 		return None
-	return JobInfo
-
-def get_job(session, job_id):
-	JobInfo = session.query(Jobs).filter_by(JobId = job_id).one()
-	return JobInfo.JobType, JobInfo.RunConfigId
+	return JobsInfo
 
 def update_job_list(session, status, job_id):
 	JobInfo = session.query(Jobs).filter_by(JobId = job_id).one()
@@ -104,10 +101,11 @@ def get_package_info(session, categories, package, repo):
 	CategoriesInfo = get_category_info(session, categories)
 	ReposInfo = get_repo_info(session, repo)
 	try:
-		PackagesInfo = session.query(Packages).filter_by(CategoryId = CategoriesInfo.CategoryId).filter_by(RepoId = RepoInfo.RepoId).filter_by(Active = True).one()
+		PackagesInfo = session.query(Packages).filter_by(CategoryId = CategoryInfo.CategoryId). \
+			filter_by(Package = package).filter_by(RepoId = RepoInfo.RepoId).filter_by(Active = True).one()
 	except NoResultFound as e:
 		return False
-	return Packages
+	return PackagesInfo
 
 def get_ebuild_info(session, build_dict):
 	EbuildInfo = session.query(Ebuilds).filter_by(Version = build_dict['ebuild_version']).filter_by(Checksum = build_dict['checksum']).\
@@ -172,7 +170,7 @@ def add_new_buildlog(session, build_dict, build_log_dict):
 	build_log_id_list = session.query(BuildLogs.BuildLogId).filter_by(EbuildId = build_dict['ebuild_id']).all()
 
 	def add_new_hilight(log_id, build_log_dict):
-		for k, hilight_tmp in sorted(build_log_dict['hilight_dict'].iteritems()):
+		for k, hilight_tmp in sorted(build_log_dict['hilight_dict'].items()):
 			NewHiLight = BuildLogsHiLight(LogId = log_id, StartLine = hilight_tmp['startline'], EndLine = hilight_tmp['endline'], HiLightCssId = hilight_tmp['hilight_css_id'])
 			session.add(NewHiLight)
 			session.commit()
@@ -217,7 +215,7 @@ def add_new_buildlog(session, build_dict, build_log_dict):
 		session.commit()
 		add_new_hilight(log_id, build_log_dict)
 		if not build_dict['build_useflags'] is None:
-			for use_id, status in  build_dict['build_useflags'].iteritems():
+			for use_id, status in  build_dict['build_useflags'].items():
 				NewBuildLogUse = BuildLogsUse(BuildLogId = build_log_id, UseId = use_id, Status = status)
 				session.add(NewBuildLogUse)
 				session.flush()
@@ -305,7 +303,7 @@ def add_new_ebuild_metadata_sql(session, ebuild_id, keywords, restrictions, iuse
 			iuse = iuse[1:]
 		use_id = get_use_id(session, iuse)
 		if use_id is None:
-			session.add(Uses(Use = iuse))
+			session.add(Uses(Flag = iuse))
 			session.commit()
 			use_id = get_use_id(session, iuse)
 		session.add(EbuildsIuse(EbuildId = ebuild_id, UseId = use_id, Status = status))
@@ -318,20 +316,31 @@ def add_new_ebuild_metadata_sql(session, ebuild_id, keywords, restrictions, iuse
 		elif keyword[0] in ["-"]:
 			keyword = keyword[1:]
 			status = 'Negative'
-		keyword_id = get_keyword_id(connection, keyword)
+		keyword_id = get_keyword_id(session, keyword)
 		if keyword_id is None:
 			session.add(Keywords(Keyword = keyword))
 			session.commit()
-			keyword_id = get_keyword_id(connection, keyword)
+			keyword_id = get_keyword_id(session, keyword)
 		session.add(EbuildsKeywords(EbuildId = ebuild_id, KeywordId = keyword_id, Status = status)) 
 		session.commit()
 
 def add_new_ebuild_sql(session, packageDict):
 	ebuild_id_list = []
-	for k, v in packageDict.iteritems():
+	for k, v in packageDict.items():
 		session.add(Ebuilds(PackageId = v['package_id'], Version = v['ebuild_version'], Checksum = v['checksum'], Active = True))
-		session.commit()
-		EbuildInfo, x = get_ebuild_info(session, v)
+		session.flush()
+		try:
+			EbuildInfo = session.query(Ebuilds).filter_by(Version = v['ebuild_version']).filter_by(Checksum = v['checksum']).\
+				filter_by(PackageId = v['package_id']).filter_by(Active = True).one()
+		except (MultipleResultsFound) as e:
+			for x in session.query(Ebuilds).filter_by(Version = v['ebuild_version']).filter_by(Checksum = v['checksum']).\
+				filter_by(PackageId = v['package_id']).filter_by(Active = True).all():
+				print(x.EbuildId)
+				# FIXME
+				#x.Checksum = 0
+				#x.Active = False
+				#session.commit()
+			sys.exit()
 		session.add(EbuildsMetadata(EbuildId = EbuildInfo.EbuildId, Revision = v['ebuild_version_revision_tree']))
 		session.commit()
 		ebuild_id_list.append(EbuildInfo.EbuildId)
@@ -357,8 +366,6 @@ def get_build_job_all(session, ebuild_id):
 	return session.query(BuildJobs).filter_by(EbuildId = ebuild_id).all()
 
 def add_old_ebuild(session, package_id, old_ebuild_list):
-	sqlQ1 = "UPDATE ebuilds SET active = 'False' WHERE ebuild_id = %s"
-	sqlQ3 = "SELECT build_job_id FROM build_jobs WHERE ebuild_id = %s"
 	for ebuild_id in  old_ebuild_list:
 		EbuildInfo = session.query(Ebuilds).filter_by(EbuildId = ebuild_id).one()
 		EbuildInfo.Active = False
@@ -368,12 +375,24 @@ def add_old_ebuild(session, package_id, old_ebuild_list):
 			for build_job in build_job_id_list:
 				del_old_build_jobs(session, build_job.BuildJobId)
 
+def add_new_package_sql(session, cp, repo):
+	element = cp.split('/')
+	categories = element[0]
+	package = element[1]
+	RepoInfo =get_repo_info(session, repo)
+	repo_id = RepoInfo.RepoId
+	CategoriesInfo = get_category_info(session, categories)
+	category_id = CategoriesInfo.CategoryId
+	session.add(Packages(Package = package, CategoryId = category_id, RepoId = repo_id, Checksum = '0', Active = True))
+	session.commit()
+	PackageInfo = get_package_info(session, categories, package, repo)
+	return PackageInfo.PackageId
+
 def get_package_metadata_sql(session, package_id):
-	sqlQ ='SELECT checksum FROM packages_metadata WHERE package_id = %s'
 	try:
 		PackagesMetadataInfo = session.query(PackagesMetadata).filter_by(PackageId = package_id).one()
 	except NoResultFound as e:
-		return None
+		return False
 	return PackagesMetadataInfo
 
 def update_email_info(session, email):
@@ -387,15 +406,15 @@ def update_email_info(session, email):
 
 def update_package_email_info(session, email_id, package_id):
 	try:
-		PackagesEmailInfo = session.query(PackageEmails).filter_by(Email = email).filter_by(PackageId = package_id).one()
+		PackagesEmailInfo = session.query(PackageEmails).filter_by(EmailId = email_id).filter_by(PackageId = package_id).one()
 	except NoResultFound as e:
-		session.add(PackagesEmails(Email = email, PackageId = package_id))
+		session.add(PackagesEmails(EmailId = email_id, PackageId = package_id))
 		session.commit()
 		PackagesEmailInfo = session.query(PackageEmails).filter_by(EmailId = email_id).filter_by(PackageId = package_id).one()
 	return PackagesEmailInfo
 
 def update_package_metadata(session, package_metadataDict):
-	for k, v in package_metadataDict.iteritems():
+	for k, v in package_metadataDict.items():
 		try:
 			PackagesMetadataInfo = session.query(PackagesMetadata).filter_by(PackageId = k).one()
 		except NoResultFound as e:
@@ -415,7 +434,10 @@ def update_manifest_sql(session, package_id, manifest_checksum_tree):
 	session.commit()
 
 def get_package_info_from_package_id(session, package_id):
-	return session.query(Packages).filter_by(PackageId = package_id).one()
+	PackageInfo = session.query(Packages).filter_by(PackageId = package_id).one()
+	CategoryInfo = session.query(Categories).filter_by(CategoryId = PackageInfo.CategoryId).one()
+	RepoInfo = session.query(Repo).filter_by(RepoId = PackageInfo.RepoId).one()
+	return PackageInfo, CategoryInfo, RepoInfo
 
 def add_new_build_job(session, ebuild_id, config_id, use_flagsDict):
 	NewBuildJobs =BuildJobs(EbuildId = ebuild_id, ConfigId = config_id, Status = 'Waiting', BuildNow = False, RemoveBin = True)
@@ -423,25 +445,29 @@ def add_new_build_job(session, ebuild_id, config_id, use_flagsDict):
 	session.flush()
 	build_job_id = NewBuildJobs.BuildJobId
 	session.commit()
-	for k, v in use_flagsDict.iteritems():
+	for k, v in use_flagsDict.items():
 		use_id = get_use_id(session, k)
 		session.add(BuildJobsUse(BuildJobId = build_job_id, UseId = use_id, Status = v))
 		session.commit()
 
 def get_ebuild_checksums(session, package_id, ebuild_version):
-	EbuildInfo = session.query(Ebuilds).filter_by(PackageId = package_id).filter_by(Version = ebuild_version).filter_by(Active = True)
 	ebuild_checksum_list = []
-	if EbuildInfo.all() == []:
-		return None
 	try:
-		EbuildInfo2 = EbuildInfo.one()
-	except (MultipleResultsFound) as e:
-		for EbuildInfo3 in EbuildInfo.all():
-			ebuild_checksum_list.append(EbuildInfo3.Checksum)
-	return ebuild_checksum_list.append(EbuildInfo2.Checksum)
+		EbuildInfo = session.query(Ebuilds).filter_by(PackageId = package_id).filter_by(Version = ebuild_version).filter_by(Active = True).one()
+	except NoResultFound as e:
+		return None, False
+	except MultipleResultsFound as e:
+		EbuildInfo2 = session.query(Ebuilds).filter_by(PackageId = package_id).filter_by(Version = ebuild_version).filter_by(Active = True).all()
+		for Ebuild in EbuildInfo2:
+			print("ebuild version checksum")
+			print(ebuild_version)
+			print(Ebuild.Version)
+			print(Ebuild.Checksum)
+			ebuild_checksum_list.append(Ebuild.Checksum)
+		return ebuild_checksum_list, True
+	return EbuildInfo.Checksum, False
 
 def get_ebuild_id_db(session, checksum, package_id):
-	sqlQ = "SELECT ebuild_id FROM ebuilds WHERE package_id = %s AND checksum = %s"
 	EbuildInfos = EbuildInfo = session.query(Ebuilds).filter_by(PackageId = package_id).filter_by(Checksum = checksum).all()
 	ebuilds_id = []
 	for EbuildInfo in EbuildInfos:

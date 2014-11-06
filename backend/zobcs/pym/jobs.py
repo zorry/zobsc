@@ -3,15 +3,16 @@ from __future__ import print_function
 #from zobcs.sync import git_pull, sync_tree
 #from zobcs.buildquerydb import add_buildquery_main, del_buildquery_main
 from zobcs.updatedb import update_db_main
-from zobcs.sqlquerys import get_config_id, add_zobcs_logs, get_jobs_id, get_job, \
-	update_job_list
+from zobcs.sqlquerys import get_config_id, add_zobcs_logs, get_jobs, update_job_list
 
 def jobs_main(session, config_id):
-	jobs_id = get_jobs_id(session, config_id)
-	if jobs_id in None:
+	JobsInfo = get_jobs(session, config_id)
+	if JobsInfo in None:
 		return
-	for job_id in jobs_id:
-		job, run_config_id = get_job(session, job_id)
+	for JobInfo in JobsInfo:
+		job = JobInfo.JobType
+		run_config_id = JobInfo.RunConfigId
+		job_id = JobInfo.JobId
 		log_msg = "Job: %s Type: %s" % (job_id, job,)
 		add_zobcs_logs(session, log_msg, "info", config_id)
 		if job == "addbuildquery":

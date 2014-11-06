@@ -16,7 +16,6 @@ class Configs(Base):
 	Config = Column('config', String(100))
 	DefaultConfig = Column('default_config', Boolean, default=False)
 	__tablename__ = 'configs'
-	ConfigsMetaData= relationship("ConfigsMetaData", backref=backref('configs', order_by='config_id'))
 	
 class Logs(Base):
 	LogId = Column('log_id', Integer, primary_key=True)
@@ -42,7 +41,7 @@ class ConfigsMetaData(Base):
 	Profile = Column('profile', String(150))
 	KeywordId = Column('keyword_id', Integer, ForeignKey('keywords.keyword_id'))
 	MakeConfText = Column('make_conf_text', Text)
-	CheckSum = Column('checksum', String(100))
+	Checksum = Column('checksum', String(100))
 	Active = Column('active', Boolean, default=False)
 	ConfigErrorText = Column('config_error_text', Text)
 	Updateing = Column('updateing', Boolean, default=False)
@@ -73,8 +72,6 @@ class Packages(Base):
 	Active = Column('active', Boolean, default=False)
 	TimeStamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 	__tablename__ = 'packages'
-	Categories = relationship("Categories", backref=backref('packages', order_by='package_id'))
-	Repos = relationship("Repos", backref=backref('packages', order_by='package_id'))
 
 class Emails(Base):
 	EmailId = Column('email_id', Integer, primary_key=True)
@@ -101,7 +98,6 @@ class Ebuilds(Base):
 	Active = Column('active', Boolean, default=False)
 	TimeStamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 	__tablename__ = 'ebuilds'
-	Packages = relationship("Packages", backref=backref('ebuilds', order_by='ebuild_id'))
 
 class EmergeOptions(Base):
 	EmergeOptionId = Column('eoption_id', Integer, primary_key=True)

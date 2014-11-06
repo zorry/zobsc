@@ -8,8 +8,8 @@ from zobcs.flags import zobcs_use_flags
 from zobcs.sqlquerys import add_zobcs_logs, get_package_info, get_config_info, \
 	add_new_build_job, add_new_ebuild_sql, get_ebuild_id_list, add_old_ebuild, \
 	get_package_metadata_sql, update_package_metadata, update_manifest_sql, \
-	get_package_info_from_package_id, get_config_id_list, add_new_manifest_sql, \
-	get_ebuild_checksums, get_ebuild_id_db
+	get_package_info_from_package_id, get_config_all_info, add_new_manifest_sql, \
+	get_ebuild_checksums, get_ebuild_id_db, get_configmetadata_info
 from zobcs.readconf import get_conf_settings
 
 class zobcs_package(object):
@@ -27,12 +27,14 @@ class zobcs_package(object):
 		mysettings_setup = portage.config(config_root = my_new_setup)
 		return mysettings_setup
 
-	def config_match_ebuild(self, cp, config_all_build_info):
+	def config_match_ebuild(self, cp, config_list):
 		config_cpv_listDict ={}
-		if config_all_build_info == []:
+		if config_list == []:
 			return config_cpv_listDict
-		for ConfigInfo in config_all_build_info:
-			if ConfigInfo.ConfigsMetaData.Auto and ConfigInfo.ConfigsMetaData.Active:
+		for config_id in config_list:
+			ConfigInfo = get_config_info(session, config_id)
+			ConfigsMetaData = get_configmetadata_info(self._session, config_id)
+			if ConfigsMetaData.Auto and ConfigsMetaData.Active:
 				mysettings_setup = self.change_config(ConfigInfo.Hostname + "/" + ConfigInfo.Config)
 				myportdb_setup = portage.portdbapi(mysettings=mysettings_setup)
 
@@ -54,7 +56,7 @@ class zobcs_package(object):
 					attDict['cpv'] = build_cpv
 					attDict['useflags'] = final_use_list
 					attDict['iuse'] = iuse_flags_list2
-					config_cpv_listDict[ConfigInfo.ConfigId] = attDict
+					config_cpv_listDict[config_id] = attDict
 
 				# Clean some cache
 				myportdb_setup.close_caches()
@@ -66,7 +68,7 @@ class zobcs_package(object):
 		try:
 			ebuild_auxdb_list = self._myportdb.aux_get(cpv, portage.auxdbkeys, myrepo=repo)
 		except:
-			ebuild_auxdb_list = []
+			ebuild_auxdb_list = None
 		else:
 			for i in range(len(ebuild_auxdb_list)):
 				if ebuild_auxdb_list[i] == '':
@@ -99,14 +101,14 @@ class zobcs_package(object):
 		# if there some error to get the metadata we add rubish to the
 		# ebuild_version_metadata_tree and set ebuild_version_checksum_tree to 0
 		# so it can be updated next time we update the db
-		if ebuild_version_metadata_tree  == []:
+		if ebuild_version_metadata_tree  is None:
 			log_msg = " QA: %s have broken metadata on repo %s" % (cpv, repo)
 			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 			ebuild_version_metadata_tree = ['','','','','','','','','','','','','','','','','','','','','','','','','']
 			ebuild_version_checksum_tree = '0'
 
 		# add the ebuild info to the dict packages
-		PackageInfo = get_package_info(session, categories, package, repo)
+		PackageInfo = get_package_info(self._session, categories, package, repo)
 		attDict = {}
 		attDict['package_id'] = PackageInfo.PackageId
 		attDict['repo'] = repo
@@ -122,7 +124,7 @@ class zobcs_package(object):
 		# Only add it if ebuild_version in packageDict and config_cpv_listDict match
 		if config_cpv_listDict is not None:
 			# Unpack config_cpv_listDict
-			for k, v in config_cpv_listDict.iteritems():
+			for k, v in config_cpv_listDict.items():
 				config_id = k
 				build_cpv = v['cpv']
 				iuse_flags_list = list(set(v['iuse']))
@@ -190,11 +192,14 @@ class zobcs_package(object):
 		for ebuild_id in get_ebuild_id_list(self._session, package_id):
 			if not ebuild_id in new_ebuild_id_list:
 				if not ebuild_id in old_ebuild_id_list:
-					old_ebuild_id_list.append(EbuildInfo.EbuildId)
+					old_ebuild_id_list.append(ebuild_id)
 		if not old_ebuild_id_list == []:
 			add_old_ebuild(self._session, package_id, old_ebuild_id_list)
 		PackagesMetadataInfo = get_package_metadata_sql(self._session, package_id)
-		package_metadata_checksum_sql = PackagesMetadataInfo.Checksum
+		if PackagesMetadataInfo:
+			package_metadata_checksum_sql = PackagesMetadataInfo.Checksum
+		else:
+			package_metadata_checksum_sql = None
 		if package_metadata_checksum_sql is None or package_metadata_checksum_sql != package_metadataDict[package_id]['metadata_xml_checksum']:
 			update_package_metadata(self._session, package_metadataDict)
 
@@ -202,12 +207,14 @@ class zobcs_package(object):
 		update_manifest_sql(self._session, package_id, manifest_checksum_tree)
 
 		# Get the best cpv for the configs and add it to config_cpv_listDict
-		PackagesInfo = get_package_info_from_package_id(self._session, package_id)
-		c = PackagesInfo.Categories.Category
-		p = PackagesInfo.Package
-		config_all_info  = get_config_id_list(self._session)
-		config_all_build_info = config_all_info.filter_by(DefaultConfig = False)
-		config_cpv_listDict = self.config_match_ebuild(c + '/' + p, config_all_build_info)
+		PackageInfo, CategoryInfo, RepoInfo = get_package_info_from_package_id(self._session, package_id)
+		cp = CategoryInfo.Category + '/' + PackagesInfo.Package
+		config_all_info  = get_config_all_info(self._session)
+		config_list = []
+		for config in get_config_all_info(self._session):
+			if config.Host is False:
+				config_list.append(config.ConfigId)
+		config_cpv_listDict = self.config_match_ebuild(cp, config_list)
 
 		# Add the ebuild to the build jobs table if needed
 		self.add_new_build_job_db(ebuild_id_list, packageDict, config_cpv_listDict)
@@ -228,12 +235,12 @@ class zobcs_package(object):
 			manifest_checksum_tree = portage.checksum.sha256hash(pkgdir + "/Manifest")[0]
 		except:
 			manifest_checksum_tree = "0"
-			log_msg = "QA: Can't checksum the Manifest file. :%s" % (cp, repo,)
+			log_msg = "QA: Can't checksum the Manifest file. :%s:%s" % (cp, repo,)
 			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 			log_msg = "C %s:%s ... Fail." % (cp, repo)
 			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 			return
-		package_id = add_new_manifest_sql(self._session, cp, repo)
+		package_id = add_new_package_sql(self._session, cp, repo)
 		
 		package_metadataDict = self.get_package_metadataDict(pkgdir, package_id)
 		# Get the ebuild list for cp
@@ -261,9 +268,9 @@ class zobcs_package(object):
 	def update_package_db(self, package_id):
 		# Update the categories and package with new info
 		# C = Checking
-		PackagesInfo = get_package_info_from_package_id(self._session, package_id)
-		cp = PackagesInfo.Categories.Category + '/' + PackagesInfo.Package
-		repo = PackagesInfo.Repos.Pepo
+		PackageInfo, CategoryInfo, RepoInfo = get_package_info_from_package_id(self._session, package_id)
+		cp = CategoryInfo.Category + '/' + PackageInfo.Package
+		repo = RepoInfo.Repo
 		log_msg = "C %s:%s" % (cp, repo)
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 		repodir = self._myportdb.getRepositoryPath(repo)
@@ -281,7 +288,7 @@ class zobcs_package(object):
 			return
 
 		# if we NOT have the same checksum in the db update the package
-		if manifest_checksum_tree != PackagesInfo.Checksum:
+		if manifest_checksum_tree != PackageInfo.Checksum:
 
 			# U = Update
 			log_msg = "U %s:%s" % (cp, repo)
@@ -309,12 +316,12 @@ class zobcs_package(object):
 				packageDict[cpv] = self.get_packageDict(pkgdir, cpv, repo)
 
 				# Get the checksum of the ebuild in tree and db
-				ebuild_version_checksum_tree = packageDict[cpv]['ebuild_version_checksum_tree']
-				checksums_db = get_ebuild_checksums(self._session, package_id, ebuild_version_tree)
+				ebuild_version_checksum_tree = packageDict[cpv]['checksum']
+				checksums_db, fail= get_ebuild_checksums(self._session, package_id, ebuild_version_tree)
 				# check if we have dupes of the checksum from db
 				if checksums_db is None:
 					ebuild_version_manifest_checksum_db = None
-				elif len(checksums_db) >= 2:
+				elif fail:
 					# FIXME: Add function to fix the dups.
 					for checksum in checksums_db:
 						ebuilds_id = get_ebuild_id_db(self._session, checksum, package_id)
@@ -324,7 +331,6 @@ class zobcs_package(object):
 						log_msg = "C %s:%s ... Fail." % (cp, repo)
 						add_zobcs_logs(self._session, log_msg, "error", self._config_id)
 					return
-
 				else:
 					ebuild_version_manifest_checksum_db = checksums_db
 

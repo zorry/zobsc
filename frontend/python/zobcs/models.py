@@ -58,15 +58,31 @@ class Packages(models.Model):
 	def __unicode__(self):
 		return u'PackageId : %s, CategoryId : %s, Package : %s, Repos : %s, Checksum : %s, Active : %s, TimeStamp : %s' % (self.PackageId, self.CategoryId, self.Package, self.RepoId, self.Checksum, self.Active, self.TimeStamp)
 
+class Emails(models.Model):
+	EmailId = models.IntegerField(primary_key=True, db_column=u'email_id')
+	Email = models.CharField(max_length=150, db_column=u'email')
+	class Meta:
+		db_table = u'emails'
+	def __unicode__(self):
+		return u'EmailId : %s, Email : %s' % (self.EmailId, self.Email)
+
+class PackagesEmails(models.Model):
+	Id =  models.IntegerField(primary_key=True, db_column=u'id')
+	PackageId = models.ForeignKey(Packages, db_column=u'package_id')
+	EmailId = models.ForeignKey(Emails, db_column=u'email_id')
+	class Meta:
+		db_table = u'packages_emails'
+	def __unicode__(self):
+		return u'PackageId : %s, EmailId : %s' % (self.PackageId, self.EmailId)
+
 class PackagesMetadata(models.Model):
 	Id =  models.IntegerField(primary_key=True, db_column=u'id')
 	PackageId = models.ForeignKey(Packages, db_column=u'package_id')
-	Email = models.CharField(max_length=150, db_column=u'email')
 	Checksum = models.CharField(max_length=100, db_column=u'checksum')
 	class Meta:
 		db_table = u'packages_metadata'
 	def __unicode__(self):
-		return u'PackageId : %s, Email : %s, Checksum : %s' % (self.PackageId, self.Email, self.Checksum)
+		return u'PackageId : %s, Checksum : %s' % (self.PackageId, self.Checksum)
 
 class Ebuilds(models.Model):
 	EbuildId = models.IntegerField(primary_key=True, db_column=u'ebuild_id')
