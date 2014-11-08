@@ -7,7 +7,7 @@ import sys
 import os
 import multiprocessing
 import portage
-
+from sqlalchemy.orm import scoped_session, sessionmaker
 from zobcs.ConnectionManager import NewConnection
 from zobcs.sqlquerys import add_zobcs_logs, get_package_info, update_repo_db, \
 	update_categories_db
@@ -32,10 +32,11 @@ def init_portage_settings(session, config_id, zobcs_settings_dict):
 	add_zobcs_logs(session, log_msg, "info", config_id)
 	return mysettings
 
-def update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, session, config_id):
-	#Session2 = sessionmaker(bind=NewConnection(zobcs_settings_dict))
-	#session2 = Session2()
-	init_package = zobcs_package(session, mysettings, myportdb, config_id, zobcs_settings_dict)
+def update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id):
+	session_factory = sessionmaker(bind=NewConnection(zobcs_settings_dict))
+        Session = scoped_session(session_factory)
+        session2 = Session()
+	init_package = zobcs_package(session2, mysettings, myportdb, config_id, zobcs_settings_dict)
 
 	# split the cp to categories and package
 	element = cp.split('/')
@@ -43,16 +44,17 @@ def update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, sess
 	package = element[1]
 
 	# update the categories table
-	update_categories_db(session, categories)
+	update_categories_db(session2, categories)
 
 	# Check if we have the cp in the package table
-	PackagesInfo = get_package_info(session, categories, package, repo)
+	PackagesInfo = get_package_info(session2, categories, package, repo)
 	if PackagesInfo:  
 		# Update the packages with ebuilds
 		init_package.update_package_db(PackagesInfo.PackageId)
 	else:
 		# Add new package with ebuilds
 		init_package.add_new_package_db(cp, repo)
+	Session.remove()
 
 def update_cpv_db(session, config_id, zobcs_settings_dict):
 	mysettings =  init_portage_settings(session, config_id, zobcs_settings_dict)
@@ -89,12 +91,13 @@ def update_cpv_db(session, config_id, zobcs_settings_dict):
 
 		# Run the update package for all package in the list and in a multiprocessing pool
 		for cp in sorted(package_list_tree):
-			#pool.apply_async(update_cpv_db_pool, (mysettings, myportdb, cp, repo, zobcs_settings_dict,))
-			update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, session, config_id)
+			pool.apply_async(update_cpv_db_pool, (mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id,))
+			# use this when debuging
+			#update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id)
 
 	#close and join the multiprocessing pools
-	#pool.close()
-	#pool.join()
+	pool.close()
+	pool.join()
 
 	log_msg = "Checking categories, package and ebuilds ... done"
 	add_zobcs_logs(session, log_msg, "info", config_id)

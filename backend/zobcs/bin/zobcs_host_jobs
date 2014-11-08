@@ -25,6 +25,7 @@ def main():
 		jobs_main(session, config_id)
 		repeat = False
 		time.sleep(60)
+	add_zobcs_logs(session, "Job deamon stoped", "info", config_id)
 
 if __name__ == "__main__":
 	main()

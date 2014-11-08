@@ -16,4 +16,4 @@ def NewConnection(zobcs_settings_dict):
 		logging.basicConfig()
 		logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 		mysqldriver = 'mysql+mysqlconnector'
-		return create_engine(mysqldriver + '://' + user + ':' + password + '@' + host + '/' + database)
+		return create_engine(mysqldriver + '://' + user + ':' + password + '@' + host + '/' + database, pool_recycle=120)
