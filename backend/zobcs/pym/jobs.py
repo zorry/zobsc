@@ -7,7 +7,7 @@ from zobcs.sqlquerys import get_config_id, add_zobcs_logs, get_jobs, update_job_
 
 def jobs_main(session, config_id):
 	JobsInfo = get_jobs(session, config_id)
-	if JobsInfo in None:
+	if JobsInfo is None:
 		return
 	for JobInfo in JobsInfo:
 		job = JobInfo.JobType

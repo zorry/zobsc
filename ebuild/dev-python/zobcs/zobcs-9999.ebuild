@@ -27,26 +27,27 @@ EGIT_REPO_URI="https://github.com/zorry/zobsc.git"
 
 PYTHON_MODNAME="zobcs"
 
-src_prepare() {
+python_prepare_all() {
 	einfo "Copying needed files from portage"
-	cp /usr/lib64/portage/pym/_emerge/actions.py ${S}/zobcs/pym
-	cp /usr/lib64/portage/pym/_emerge/main.py ${S}/zobcs/pym
-	cp /usr/lib64/portage/pym/_emerge/Scheduler.py ${S}/zobcs/pym
+	cp /usr/lib64/python2.7/site-packages/_emerge/actions.py ${S}/zobcs/pym
+	cp /usr/lib64/python2.7/site-packages/_emerge/main.py ${S}/zobcs/pym
+	cp /usr/lib64/python2.7/site-packages/_emerge/Scheduler.py ${S}/zobcs/pym
 	einfo "Done."
 	epatch "${FILESDIR}/zobcs_portage_actions.patch"
 	epatch "${FILESDIR}/zobcs_portage_main.patch"
 	epatch "${FILESDIR}/zobcs_portage_Scheduler.patch"
+	distutils-r1_python_prepare_all
 }
 
 src_install() {
-	dodir /var/lib/zobcs || die
-	dodir etc/zobcs || die
+	dodir /var/lib/zobcs
+	dodir etc/zobcs
 	insinto /etc/zobcs
-	doins ${FILESDIR}/zobcs.conf || die
-	dosbin ${S}/zobcs/bin/zobcs_host_jobs || die
-	dosbin  ${S}/zobcs/bin/zobcs_guest_jobs || die
+	doins ${FILESDIR}/zobcs.conf
+	dosbin ${S}/zobcs/bin/zobcs_host_jobs
+	dosbin  ${S}/zobcs/bin/zobcs_guest_jobs
 	#dodoc ${S}/zobcs/sql/zobcs.sql || die
-	dodoc  ${S}/zobcs/doc/Setup.txt || die
+	#dodoc  ${S}/zobcs/doc/Setup.txt || die
 
 	distutils-r1_src_install
 }	

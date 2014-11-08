@@ -8,7 +8,7 @@ from zobcs.flags import zobcs_use_flags
 from zobcs.sqlquerys import add_zobcs_logs, get_package_info, get_config_info, \
 	add_new_build_job, add_new_ebuild_sql, get_ebuild_id_list, add_old_ebuild, \
 	get_package_metadata_sql, update_package_metadata, update_manifest_sql, \
-	get_package_info_from_package_id, get_config_all_info, add_new_manifest_sql, \
+	get_package_info_from_package_id, get_config_all_info, add_new_package_sql, \
 	get_ebuild_checksums, get_ebuild_id_db, get_configmetadata_info
 from zobcs.readconf import get_conf_settings
 
@@ -32,7 +32,7 @@ class zobcs_package(object):
 		if config_list == []:
 			return config_cpv_listDict
 		for config_id in config_list:
-			ConfigInfo = get_config_info(session, config_id)
+			ConfigInfo = get_config_info(self._session, config_id)
 			ConfigsMetaData = get_configmetadata_info(self._session, config_id)
 			if ConfigsMetaData.Auto and ConfigsMetaData.Active:
 				mysettings_setup = self.change_config(ConfigInfo.Hostname + "/" + ConfigInfo.Config)
@@ -138,7 +138,7 @@ class zobcs_package(object):
 					use_flagsDict[x] = True
 				# Unpack packageDict
 				i = 0
-				for k, v in packageDict.iteritems():
+				for k, v in packageDict.items():
 					ebuild_id = ebuild_id_list[i]
 
 					# Comper and add the cpv to buildqueue
@@ -208,7 +208,7 @@ class zobcs_package(object):
 
 		# Get the best cpv for the configs and add it to config_cpv_listDict
 		PackageInfo, CategoryInfo, RepoInfo = get_package_info_from_package_id(self._session, package_id)
-		cp = CategoryInfo.Category + '/' + PackagesInfo.Package
+		cp = CategoryInfo.Category + '/' + PackageInfo.Package
 		config_all_info  = get_config_all_info(self._session)
 		config_list = []
 		for config in get_config_all_info(self._session):

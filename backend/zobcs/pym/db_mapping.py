@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship, backref
 
 Base = declarative_base()
 
-class KeyWords(Base):
+class Keywords(Base):
 	KeywordId = Column('keyword_id', Integer, primary_key=True)
 	Keyword = Column('keyword', String)
 	__tablename__ = 'keywords'
@@ -14,7 +14,7 @@ class Configs(Base):
 	ConfigId = Column('config_id', Integer, primary_key=True)
 	Hostname = Column('hostname', String(150))
 	Config = Column('config', String(100))
-	DefaultConfig = Column('default_config', Boolean, default=False)
+	Host = Column('default_config', Boolean, default=False)
 	__tablename__ = 'configs'
 	
 class Logs(Base):
@@ -229,7 +229,7 @@ class EbuildsRestrictions(Base):
 	RestrictionId = Column('restriction_id', ForeignKey('restrictions.restriction_id'))
 	__tablename__ = 'ebuilds_restrictions'
 
-class EbuildsIuse(Base):
+class EbuildsIUse(Base):
 	Id =  Column('id', Integer, primary_key=True)
 	EbuildId = Column('ebuild_id', ForeignKey('ebuilds.ebuild_id'))
 	UseId = Column('use_id', ForeignKey('uses.use_id'))

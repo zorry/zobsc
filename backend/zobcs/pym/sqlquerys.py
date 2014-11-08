@@ -97,15 +97,15 @@ def get_repo_info(session, repo):
 		return False
 	return RepoInfo
 
-def get_package_info(session, categories, package, repo):
-	CategoriesInfo = get_category_info(session, categories)
-	ReposInfo = get_repo_info(session, repo)
+def get_package_info(session, category, package, repo):
+	CategoryInfo = get_category_info(session, category)
+	RepoInfo = get_repo_info(session, repo)
 	try:
-		PackagesInfo = session.query(Packages).filter_by(CategoryId = CategoryInfo.CategoryId). \
+		PackageInfo = session.query(Packages).filter_by(CategoryId = CategoryInfo.CategoryId). \
 			filter_by(Package = package).filter_by(RepoId = RepoInfo.RepoId).filter_by(Active = True).one()
 	except NoResultFound as e:
 		return False
-	return PackagesInfo
+	return PackageInfo
 
 def get_ebuild_info(session, build_dict):
 	EbuildInfo = session.query(Ebuilds).filter_by(Version = build_dict['ebuild_version']).filter_by(Checksum = build_dict['checksum']).\
@@ -306,7 +306,7 @@ def add_new_ebuild_metadata_sql(session, ebuild_id, keywords, restrictions, iuse
 			session.add(Uses(Flag = iuse))
 			session.commit()
 			use_id = get_use_id(session, iuse)
-		session.add(EbuildsIuse(EbuildId = ebuild_id, UseId = use_id, Status = status))
+		session.add(EbuildsIUse(EbuildId = ebuild_id, UseId = use_id, Status = status))
 		session.commit()
 	for keyword in keywords:
 		status = 'Stable'
@@ -353,7 +353,7 @@ def add_new_ebuild_sql(session, packageDict):
 			keywords.append(i)
 		for i in v['ebuild_version_metadata_tree'][10].split():
 			iuse.append(i)
-		add_new_ebuild_metadata_sql(session, ebuild_id, keywords, restrictions, iuse)
+		add_new_ebuild_metadata_sql(session, EbuildInfo.EbuildId, keywords, restrictions, iuse)
 	return ebuild_id_list
 
 def get_ebuild_id_list(session, package_id):
@@ -406,11 +406,11 @@ def update_email_info(session, email):
 
 def update_package_email_info(session, email_id, package_id):
 	try:
-		PackagesEmailInfo = session.query(PackageEmails).filter_by(EmailId = email_id).filter_by(PackageId = package_id).one()
+		PackagesEmailInfo = session.query(PackagesEmails).filter_by(EmailId = email_id).filter_by(PackageId = package_id).one()
 	except NoResultFound as e:
 		session.add(PackagesEmails(EmailId = email_id, PackageId = package_id))
 		session.commit()
-		PackagesEmailInfo = session.query(PackageEmails).filter_by(EmailId = email_id).filter_by(PackageId = package_id).one()
+		PackagesEmailInfo = session.query(PackagesEmails).filter_by(EmailId = email_id).filter_by(PackageId = package_id).one()
 	return PackagesEmailInfo
 
 def update_package_metadata(session, package_metadataDict):
@@ -436,7 +436,7 @@ def update_manifest_sql(session, package_id, manifest_checksum_tree):
 def get_package_info_from_package_id(session, package_id):
 	PackageInfo = session.query(Packages).filter_by(PackageId = package_id).one()
 	CategoryInfo = session.query(Categories).filter_by(CategoryId = PackageInfo.CategoryId).one()
-	RepoInfo = session.query(Repo).filter_by(RepoId = PackageInfo.RepoId).one()
+	RepoInfo = session.query(Repos).filter_by(RepoId = PackageInfo.RepoId).one()
 	return PackageInfo, CategoryInfo, RepoInfo
 
 def add_new_build_job(session, ebuild_id, config_id, use_flagsDict):
