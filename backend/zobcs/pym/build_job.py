@@ -15,7 +15,7 @@ from portage.dep import check_required_use
 from zobcs.main import emerge_main
 from zobcs.build_log import log_fail_queru
 from zobcs.actions import load_emerge_config
-from zobcs.mysql_querys import add_zobcs_logs, get_cp_repo_from_package_id, get_packages_to_build, get_config
+from zobcs.sqlquerys import add_zobcs_logs, get_packages_to_build
 
 class build_job_action(object):
 
@@ -63,7 +63,7 @@ class build_job_action(object):
 	def build_procces(self, buildqueru_cpv_dict, build_dict, settings, portdb):
 		build_cpv_list = []
 		depclean_fail = True
-		for k, build_use_flags_list in buildqueru_cpv_dict.iteritems():
+		for k, build_use_flags_list in buildqueru_cpv_dict.items():
 			build_cpv_list.append("=" + k)
 			if not build_use_flags_list == None:
 				build_use_flags = ""
@@ -109,11 +109,11 @@ class build_job_action(object):
 
 		# close the db for the multiprocessing pool will make new ones
 		# and we don't need this one for some time.
-		self._session.close()
+		# self._session.close()
 		
 		# Call main_emerge to build the package in build_cpv_list
 		print("Build: %s" % build_dict)
-		build_fail = emerge_main(argscmd, build_dict)
+		build_fail = emerge_main(argscmd, build_dict, self._session)
 		# Run depclean
 		if  '--depclean' in build_dict['emerge_options'] and not '--nodepclean' in build_dict['emerge_options']:
 			depclean_fail = do_depclean()

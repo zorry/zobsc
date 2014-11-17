@@ -135,7 +135,7 @@ class zobcs_package(object):
 				for x in use_enable:
 					use_flagsDict[x] = True
 				for x in use_disable:
-					use_flagsDict[x] = True
+					use_flagsDict[x] = False
 				# Unpack packageDict
 				i = 0
 				for k, v in packageDict.items():
@@ -324,7 +324,7 @@ class zobcs_package(object):
 				elif fail:
 					# FIXME: Add function to fix the dups.
 					for checksum in checksums_db:
-						ebuilds_id = get_ebuild_id_db(self._session, checksum, package_id)
+						ebuilds_id , status = get_ebuild_id_db(self._session, checksum, package_id)
 						for ebuild_id in ebuilds_id:
 							log_msg = "U %s:%s:%s Dups of checksums" % (cpv, repo, ebuild_id,)
 							add_zobcs_logs(self._session, log_msg, "error", self._config_id)

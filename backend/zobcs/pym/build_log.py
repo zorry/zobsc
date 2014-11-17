@@ -22,10 +22,10 @@ from zobcs.text import get_log_text_list
 from zobcs.package import zobcs_package
 from zobcs.readconf import get_conf_settings
 from zobcs.flags import zobcs_use_flags
-from zobcs.ConnectionManager import newConnection
+from zobcs.ConnectionManager import NewConnection
 from zobcs.sqlquerys import add_zobcs_logs, get_config_id, get_ebuild_id_db, add_new_buildlog, \
-	get_package_id, get_build_job_id, get_use_id, get_config, get_hilight_info, get_error_info_list, \
-	add_e_info, get_fail_times, add_fail_times, update_fail_times, del_old_build_jobs
+	get_package_info, get_build_job_id, get_use_id, get_config_info, get_hilight_info, get_error_info_list, \
+	add_e_info, get_fail_times, add_fail_times, update_fail_times, del_old_build_jobs, add_old_ebuild
 from sqlalchemy.orm import sessionmaker
 
 def get_build_dict_db(session, config_id, settings, pkg):
@@ -37,10 +37,10 @@ def get_build_dict_db(session, config_id, settings, pkg):
 	ebuild_version = cpv_getversion(pkg.cpv)
 	log_msg = "Logging %s:%s" % (pkg.cpv, repo,)
 	add_zobcs_logs(session, log_msg, "info", config_id)
-	package_id = get_package_id(session, categories, package, repo)
+	PackageInfo = get_package_info(session, categories, package, repo)
 	build_dict = {}
 	build_dict['ebuild_version'] = ebuild_version
-	build_dict['package_id'] = package_id
+	build_dict['package_id'] = PackageInfo.PackageId
 	build_dict['cpv'] = pkg.cpv
 	build_dict['categories'] = categories
 	build_dict['package'] = package
@@ -67,15 +67,15 @@ def get_build_dict_db(session, config_id, settings, pkg):
 	pkgdir = myportdb.getRepositoryPath(repo) + "/" + categories + "/" + package
 	ebuild_version_checksum_tree = portage.checksum.sha256hash(pkgdir+ "/" + package + "-" + ebuild_version + ".ebuild")[0]
 	build_dict['checksum'] = ebuild_version_checksum_tree
-	ebuild_id_list, status = get_ebuild_id_db(session, build_dict)
+	ebuild_id_list, status = get_ebuild_id_db(session, build_dict['checksum'], build_dict[package_id])
 	if status:
 		if ebuild_id_list is None:
 			log_msg = "%s:%s Don't have any ebuild_id!" % (pkg.cpv, repo,)
 			add_zobcs_logs(session, log_msg, "info", config_id)
-			update_manifest_sql(session, package_id, "0")
+			update_manifest_sql(session, build_dict['package_id'], "0")
 			init_package = zobcs_package(session, settings, myportdb)
-			init_package.update_package_db(package_id)
-			ebuild_id_list, status = get_ebuild_id_db(session, build_dict)
+			init_package.update_package_db(build_dict['package_id'])
+			ebuild_id_list, status = get_ebuild_id_db(session, build_dict['checksum'], build_dict['package_id'])
 			if status and ebuild_id is None:
 				log_msg = "%s:%s Don't have any ebuild_id!" % (pkg.cpv, repo,)
 				add_zobcs_logs(session, log_msg, "error", config_id)
@@ -131,7 +131,7 @@ def search_buildlog(session, logfile_text, text_rows):
 	for hilight_tmp in hilight_list:
 		add_new_hilight = True
 		add_new_hilight_middel = None
-		for k, v in sorted(new_hilight_dict.iteritems()):
+		for k, v in sorted(new_hilight_dict.items()):
 			if hilight_tmp['startline'] == hilight_tmp['endline']:
 				if v['endline'] == hilight_tmp['startline'] or v['startline'] == hilight_tmp['startline']:
 					add_new_hilight = False
@@ -179,7 +179,7 @@ def get_buildlog_info(session, settings, pkg, build_dict):
 	repoman_error_list = []
 	sum_build_log_list = []
 	error_info_list = get_error_info_list(session)
-	for k, v in sorted(hilight_dict.iteritems()):
+	for k, v in sorted(hilight_dict.items()):
 		if v['startline'] == v['endline']:
 			error_log_list.append(logfile_text[k -1])
 			if v['hilight_css_id'] == "3" or v['hilight_css_id'] == "4": # qa = 3 and 4
@@ -219,10 +219,10 @@ def get_emerge_info_id(settings, trees, session, config_id):
 	emerge_info = ""
 	e_info_hash = hashlib.sha256()
 	for e_info in emerge_info_list:
-		emerge_info = emerge_info + e_info
+		emerge_info = emerge_info + e_info.encode('utf-8')
 		# Don't hash this lines for day change on every sync and run.
 		if not re.search('^KiB Mem:', e_info) and not re.search('^KiB Swap:', e_info) and not re.search('^Timestamp of tree:', e_info):
-			e_info_hash.update(e_info)
+			e_info_hash.update(e_info.encode('utf-8'))
 	einfo_id, new = add_e_info(session, emerge_info, e_info_hash.hexdigest())
 	if new :
 		log_msg = "New Emerge --info is logged."
@@ -253,7 +253,7 @@ def add_buildlog_main(settings, pkg, trees):
 	if error_log_list != []:
 		for log_line in error_log_list:
 			build_error = build_error + log_line
-			log_hash.update(log_line)
+			log_hash.update(log_line.encode('utf-8'))
 	build_log_dict['build_error'] = build_error
 	build_log_dict['log_hash'] = log_hash.hexdigest()
 	build_log_dict['logfilename'] = settings.get("PORTAGE_LOG_FILE").split(host_config)[1]
@@ -299,7 +299,7 @@ def log_fail_queru(session, build_dict, settings):
 			build_log_dict['summary_error_list'] = sum_build_log_list
 			if build_dict['type_fail'] == 'merge fail':
 				error_log_list = []
-				for k, v in build_dict['failed_merge'].iteritems():
+				for k, v in build_dict['failed_merge'].items():
 					error_log_list.append(v['fail_msg'])
 			build_log_dict['error_log_list'] = error_log_list
 			build_error = ""
@@ -314,15 +314,15 @@ def log_fail_queru(session, build_dict, settings):
 			build_log_dict['log_hash'] = '0'
 			useflagsdict = {}
 			if build_dict['build_useflags'] == {}:
-				for k, v in build_dict['build_useflags'].iteritems():
+				for k, v in build_dict['build_useflags'].items():
 					use_id = get_use_id(session, k)
 					useflagsdict[use_id] = v
 					build_dict['build_useflags'] = useflagsdict
 			else:
 				build_dict['build_useflags'] = None			
 			if settings.get("PORTAGE_LOG_FILE") is not None:
-				hostname, config = get_config(session, config_id)
-				host_config = hostname +"/" + config
+				ConfigInfo= get_config_info(session, config_id)
+				host_config = ConfigInfo.Hostname +"/" + ConfigInfo.Config
 				build_log_dict['logfilename'] = settings.get("PORTAGE_LOG_FILE").split(host_config)[1]
 				os.chmod(settings.get("PORTAGE_LOG_FILE"), 0o664)
 			else:

@@ -34,8 +34,8 @@ def init_portage_settings(session, config_id, zobcs_settings_dict):
 
 def update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id):
 	session_factory = sessionmaker(bind=NewConnection(zobcs_settings_dict))
-        Session = scoped_session(session_factory)
-        session2 = Session()
+	Session = scoped_session(session_factory)
+	session2 = Session()
 	init_package = zobcs_package(session2, mysettings, myportdb, config_id, zobcs_settings_dict)
 
 	# split the cp to categories and package
@@ -60,7 +60,7 @@ def update_cpv_db(session, config_id, zobcs_settings_dict):
 	mysettings =  init_portage_settings(session, config_id, zobcs_settings_dict)
 	log_msg = "Checking categories, package, ebuilds"
 	add_zobcs_logs(session, log_msg, "info", config_id)
-	
+
 	# Setup portdb, package
 	myportdb = portage.portdbapi(mysettings=mysettings)
 	repo_list = ()

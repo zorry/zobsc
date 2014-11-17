@@ -2,7 +2,7 @@ from __future__ import print_function
 import portage
 from portage._sets.base import InternalPackageSet
 from _emerge.main import parse_opts
-from _emerge.actions import load_emerge_config, action_depclean, calc_depclean
+from zobcs.actions import load_emerge_config, action_depclean, calc_depclean
 
 def do_depclean():
 	mysettings, mytrees, mtimedb = load_emerge_config()

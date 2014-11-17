@@ -209,15 +209,15 @@ class zobcs_use_flags(object):
 		use_disable = list(set(iuse_flags_list).difference(set(use_enable)))
 		use_flagsDict = {}
 		for x in use_enable:
-			use_flagsDict[x] = 'True'
+			use_flagsDict[x] = True
 		for x in use_disable:
-			use_flagsDict[x] = 'False'
+			use_flagsDict[x] = False
 		print("use_flagsDict", use_flagsDict)
-		for k, v in use_flagsDict.iteritems():
+		for k, v in use_flagsDict.items():
 			if build_use_flags_dict[k] != v:
-				if build_use_flags_dict[k] == 'True':
+				if build_use_flags_dict[k]:
 					build_use_flags_list.append(k)
-				if build_use_flags_dict[k] == 'False':
+				else:
 					build_use_flags_list.append("-" + k)
 		if build_use_flags_list == []:
 			build_use_flags_list = None

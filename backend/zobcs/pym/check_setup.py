@@ -58,8 +58,6 @@ def check_make_conf_guest(session, config_id):
 	except Exception as e:
 		return False
 	ConfigsMetaDataInfo = get_configmetadata_info(session, config_id)
-	if make_conf_checksum_db is None:
-		return False
 	print('make_conf_checksum_tree', make_conf_checksum_tree)
 	print('make_conf_checksum_db', ConfigsMetaDataInfo.Checksum)
 	if make_conf_checksum_tree != ConfigsMetaDataInfo.Checksum:
