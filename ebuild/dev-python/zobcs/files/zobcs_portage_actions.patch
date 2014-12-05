@@ -91,7 +91,7 @@
  
 -	if unresolved_deps():
 -		return 1, [], False, 0
-+	unresolvable = unresolved_deps():
++	unresolvable = unresolved_deps()
 +	if not unresolvable is None:
 +		return 1, [], False, 0, unresolvable
  
