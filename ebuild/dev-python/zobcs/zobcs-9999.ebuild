@@ -36,6 +36,7 @@ python_prepare_all() {
 	epatch "${FILESDIR}/zobcs_portage_actions.patch"
 	epatch "${FILESDIR}/zobcs_portage_main.patch"
 	epatch "${FILESDIR}/zobcs_portage_Scheduler.patch"
+	epatch "${FILESDIR}/zobcs_portage_info.patch"
 	distutils-r1_python_prepare_all
 }
 
