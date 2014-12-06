@@ -172,7 +172,6 @@ class BuildLogs(Base):
 
 class EmergeInfo(Base):
 	EInfoId = Column('einfo_id', Integer, primary_key=True)
-	Checksum = Column('checksum', String(100))
 	EmergeInfoText = Column('emerge_info_text', Text)
 	__tablename__ = 'emerge_info'
 

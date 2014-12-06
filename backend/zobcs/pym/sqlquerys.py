@@ -147,17 +147,13 @@ def get_hilight_info(session):
 def get_error_info_list(session):
 	return session.query(ErrorsInfo).all()
 
-def add_e_info(session, emerge_info, e_info_hash):
-	try:
-		EmergeInfoId = session.query(EmergeInfo.EInfoId).filter_by(Checksum = e_info_hash).one()
-	except NoResultFound as e:
-		AddEmergeInfo = EmergeInfo(Checksum = e_info_hash, EmergeInfoText = emerge_info)
-		session.add(AddEmergeInfo)
-		session.flush()
-		EmergeInfoId = AddEmergeInfo.EInfoId
-		session.commit()
-		return EmergeInfoId, True
-	return EmergeInfoId[0], False
+def add_e_info(session, emerge_info):
+	AddEmergeInfo = EmergeInfo(EmergeInfoText = emerge_info)
+	session.add(AddEmergeInfo)
+	session.flush()
+	EmergeInfoId = AddEmergeInfo.EInfoId
+	session.commit()
+	return EmergeInfoId
 
 def del_old_build_jobs(session, build_job_id):
 	session.query(BuildJobsUse).filter(BuildJobsUse.BuildJobId == build_job_id).delete()
@@ -365,7 +361,7 @@ def get_ebuild_id_list(session, package_id):
 def get_build_job_all(session, ebuild_id):
 	return session.query(BuildJobs).filter_by(EbuildId = ebuild_id).all()
 
-def add_old_ebuild(session, package_id, old_ebuild_list):
+def add_old_ebuild(session, old_ebuild_list):
 	for ebuild_id in  old_ebuild_list:
 		EbuildInfo = session.query(Ebuilds).filter_by(EbuildId = ebuild_id).one()
 		EbuildInfo.Active = False
@@ -469,11 +465,11 @@ def get_ebuild_checksums(session, package_id, ebuild_version):
 
 def get_ebuild_id_db(session, checksum, package_id):
 	try:
-		EbuildInfos = EbuildInfo = session.query(Ebuilds).filter_by(PackageId = package_id).filter_by(Checksum = checksum).one()
+		EbuildInfos = session.query(Ebuilds).filter_by(PackageId = package_id).filter_by(Checksum = checksum).one()
 	except NoResultFound as e:
 		return None, True
 	except MultipleResultsFound as e:
-		EbuildInfos = EbuildInfo = session.query(Ebuilds).filter_by(PackageId = package_id).filter_by(Checksum = checksum).all()
+		EbuildInfos = session.query(Ebuilds).filter_by(PackageId = package_id).filter_by(Checksum = checksum).all()
 		ebuilds_id = []
 		for EbuildInfo in EbuildInfos:
 			ebuilds_id.append(EbuildInfo.EbuildId)

@@ -217,16 +217,10 @@ def get_emerge_info_id(settings, trees, session, config_id):
 	myaction, myopts, myfiles = parse_opts(args, silent=True)
 	status, emerge_info_list = action_info(settings, trees, myopts, myfiles)
 	emerge_info = ""
-	e_info_hash = hashlib.sha256()
-	for e_info in emerge_info_list:
-		emerge_info = emerge_info + e_info.encode('utf-8')
-		# Don't hash this lines for day change on every sync and run.
-		if not re.search('^KiB Mem:', e_info) and not re.search('^KiB Swap:', e_info) and not re.search('^Timestamp of tree:', e_info):
-			e_info_hash.update(e_info.encode('utf-8'))
-	einfo_id, new = add_e_info(session, emerge_info, e_info_hash.hexdigest())
-	if new :
-		log_msg = "New Emerge --info is logged."
-		add_zobcs_logs(session, log_msg, "info", config_id)
+	emerge_info = "\n".join(emerge_info_list)
+	einfo_id = add_e_info(session, emerge_info)
+	log_msg = "New Emerge --info is logged."
+	add_zobcs_logs(session, log_msg, "info", config_id)
 	return einfo_id
 
 def add_buildlog_main(settings, pkg, trees):
