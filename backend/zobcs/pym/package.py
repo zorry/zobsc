@@ -144,7 +144,6 @@ class zobcs_package(object):
 					# Comper and add the cpv to buildqueue
 					if build_cpv == k:
 						add_new_build_job(self._session, ebuild_id, config_id, use_flagsDict)
-
 						# B = Build cpv use-flags config
 						ConfigInfo = get_config_info(self._session, config_id)
 
@@ -194,7 +193,7 @@ class zobcs_package(object):
 				if not ebuild_id in old_ebuild_id_list:
 					old_ebuild_id_list.append(ebuild_id)
 		if not old_ebuild_id_list == []:
-			add_old_ebuild(self._session, package_id, old_ebuild_id_list)
+			add_old_ebuild(self._session, old_ebuild_id_list)
 		PackagesMetadataInfo = get_package_metadata_sql(self._session, package_id)
 		if PackagesMetadataInfo:
 			package_metadata_checksum_sql = PackagesMetadataInfo.Checksum
@@ -322,15 +321,15 @@ class zobcs_package(object):
 				if checksums_db is None:
 					ebuild_version_manifest_checksum_db = None
 				elif fail:
-					# FIXME: Add function to fix the dups.
+					dupe_ebuild_id_list = []
 					for checksum in checksums_db:
 						ebuilds_id , status = get_ebuild_id_db(self._session, checksum, package_id)
 						for ebuild_id in ebuilds_id:
 							log_msg = "U %s:%s:%s Dups of checksums" % (cpv, repo, ebuild_id,)
 							add_zobcs_logs(self._session, log_msg, "error", self._config_id)
-						log_msg = "C %s:%s ... Fail." % (cp, repo)
-						add_zobcs_logs(self._session, log_msg, "error", self._config_id)
-					return
+							dupe_ebuild_id_list.append(ebuild_id)
+					add_old_ebuild(self._session, dupe_ebuild_id_list)
+					ebuild_version_manifest_checksum_db = None
 				else:
 					ebuild_version_manifest_checksum_db = checksums_db
 
@@ -346,7 +345,8 @@ class zobcs_package(object):
 				else:
 					# Remove cpv from packageDict and add ebuild to new ebuils list
 					del packageDict[cpv]
-					new_ebuild_id_list.append(get_ebuild_id_db(self._session, ebuild_version_checksum_tree, package_id))
+					ebuild_id , status = get_ebuild_id_db(self._session, ebuild_version_checksum_tree, package_id)
+					new_ebuild_id_list.append(ebuild_id)
 			package_metadataDict = self.get_package_metadataDict(pkgdir, package_id)
 			self.add_package(packageDict, package_metadataDict, package_id, new_ebuild_id_list, old_ebuild_id_list, manifest_checksum_tree)
 

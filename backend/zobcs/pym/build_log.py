@@ -67,7 +67,7 @@ def get_build_dict_db(session, config_id, settings, pkg):
 	pkgdir = myportdb.getRepositoryPath(repo) + "/" + categories + "/" + package
 	ebuild_version_checksum_tree = portage.checksum.sha256hash(pkgdir+ "/" + package + "-" + ebuild_version + ".ebuild")[0]
 	build_dict['checksum'] = ebuild_version_checksum_tree
-	ebuild_id_list, status = get_ebuild_id_db(session, build_dict['checksum'], build_dict[package_id])
+	ebuild_id_list, status = get_ebuild_id_db(session, build_dict['checksum'], build_dict['package_id'])
 	if status:
 		if ebuild_id_list is None:
 			log_msg = "%s:%s Don't have any ebuild_id!" % (pkg.cpv, repo,)
@@ -87,7 +87,7 @@ def get_build_dict_db(session, config_id, settings, pkg):
 				old_ebuild_id_list.append(ebuild_id.EbuildId)
 			add_old_ebuild(session, package_id, old_ebuild_id_list)
 		return
-	build_dict['ebuild_id'] = ebuild_id_list.EbuildId
+	build_dict['ebuild_id'] = ebuild_id_list
 
 	build_job_id = get_build_job_id(session, build_dict)
 	if build_job_id is None:
