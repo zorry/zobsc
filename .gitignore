@@ -1,7 +1,7 @@
 # Backup files
 *~
 # log dir
-frontend/static/logs/
+frontend/static/logs
 # Python compiled files
 *.pyc
 frontend/python/tinderbox/settings.py
