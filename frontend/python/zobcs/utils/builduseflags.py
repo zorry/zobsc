@@ -1,6 +1,6 @@
 from zobcs.models import *
 from django.shortcuts import get_object_or_404
-from gobs.flags import gobs_use_flags
+from zobcs.utils.flags import zobcs_use_flags
 import portage
 def config_get_use(ebuild_id, config_id):
 	CS = get_object_or_404(Configs, ConfigId = config_id)
@@ -20,7 +20,7 @@ def config_get_use(ebuild_id, config_id):
 	build_cpv = C + "/" + P + "-" + V
 	
 	# Get the iuse and use flags for that config/setup and cpv
-	init_useflags = gobs_use_flags(mysettings_setup, myportdb_setup, build_cpv)
+	init_useflags = zobcs_use_flags(mysettings_setup, myportdb_setup, build_cpv)
 	iuse_flags_list, final_use_list = init_useflags.get_flags()
 	iuse_flags_list2 = []
 	for iuse_line in iuse_flags_list:

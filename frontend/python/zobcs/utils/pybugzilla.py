@@ -1,7 +1,7 @@
 from __future__ import print_function
 import commands
 import getpass
-from cookielib import CookieJar, LWPCookieJar
+from http.cookiejar import CookieJar, LWPCookieJar
 import locale
 import mimetypes
 import os
@@ -10,7 +10,7 @@ import re
 import sys
 import tempfile
 import textwrap
-import xmlrpclib
+import xmlrpc.client
 
 try:
 	import readline
@@ -18,6 +18,8 @@ except ImportError:
 	readline = None
 
 from bugz.bugzilla import BugzillaProxy
+from bugz.errhandling import BugzError
+from bugz.log import log_info
 from django.conf import settings
 
 BUGZ_COMMENT_TEMPLATE = \
@@ -82,10 +84,11 @@ class PrettyBugz:
 		"""Attempt to call method with args. Log in if authentication is required.
 		"""
 		try:
+			self.login()
 			return method(*args)
-		except xmlrpclib.Fault, fault:
+		except xmlrpclib.Fault as fault:
 			# Fault code 410 means login required
-			if fault.faultCode == 410 and not self.skip_auth:
+			if fault.faultCode == 410:
 				self.login()
 				return method(*args)
 			raise

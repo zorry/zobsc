@@ -12,17 +12,20 @@
 {% for B in BLI %}
  <div class="accordion-group row-fluid">
  <div class="accordion-heading">
- <a class="accordion-toggle" data-toggle="collapse" data-target="#accordion-target-{{forloop.counter}}" data-parent="#accordion2" href="#collapseOne">{{ B.C }}/{{ B.P }}-{{ B.V }}::{{ B.R }}  {{ B.RV }}</a>
-
+  <a class="accordion-toggle" data-toggle="collapse" data-target="#accordion-target-{{forloop.counter}}" data-parent="#accordion2" href="#collapseOne">{{ B.C }}/{{ B.P }}-{{ B.V }}::{{ B.R }}  {{ B.RV }}
+  {% if B.BugId %}
+    {{ B.BugId}}
+  {% endif %}
+  </a>
  <div id="accordion-target-{{forloop.counter}}" class="row-fluid accordion-body collapse">
  <div class="accordion-inner">
  <div class="row-fluid">
  <div class=span3>
     <p class="lead">Host information</p>
         Host: {{ B.hostname }}<br />
-        Config:{{B.config }}<br />
-	Profile:{{B.profile }}<br/>
-        Emerge options:
+        Config: {{B.config }}<br />
+	Profile: {{B.profile }}<br/>
+        Emerge options :
         {% for eoption in B.emerge_option %}
             {{ eoption }}
         {% endfor %}
@@ -44,7 +47,10 @@
  </div>
 {% endif %}
  </div>
- <br></br>
+ <br>
+ {% if B.BugId %}
+   <a href="https://bugs.gentoo.org/show_bug.cgi?id={{ B.BugId}}"> Bug Id: {{ B.BugId}}</a><br/>
+ {% endif %}
  <div class="row-fluid">
  <div class=span12>
 	{% if B.Summery_text %}

@@ -1,9 +1,10 @@
 from zobcs.models import *
 from zobcs.forms import *
-from zobcs.utils.pybugzilla import PrettyBugz
+from zobcs.utils.cli import PrettyBugz
 from zobcs.utils.builduseflags import config_get_use
 from zobcs.utils.utils import Get_CPVR
 from django.shortcuts import render, get_object_or_404, HttpResponseRedirect
+from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.db import transaction
@@ -77,6 +78,10 @@ def views_buildinfo(request, ebuild_id, buildlog_id):
 		adict['RV'] = EM.Revision
 		adict['Fail'] = B.Fail
 		adict['Summery_text'] = B.SummeryText
+		if B.BugId == "0":
+			adict['BugId'] = False
+		else:
+			adict['BugId'] = B.BugId
 		config_list = []
 		BC = BuildLogsConfig.objects.get(BuildLogId = B.BuildLogId)
 		CM = ConfigsMetadata.objects.get(ConfigId = BC.ConfigId.ConfigId)
@@ -105,7 +110,7 @@ def views_buildinfo(request, ebuild_id, buildlog_id):
 				adict['use_enable'] = use_enable
 			if not use_disable == []:
 				adict['use_disable'] = use_disable
-                adict['BuildLog'] = config_list
+			adict['BuildLog'] = config_list
 		BuildLogInfo.append(adict)
 	TmpDict = { 'BLI' : BuildLogInfo }
 	return render(request, 'pages/buildinfo.html', TmpDict)
@@ -185,36 +190,40 @@ def views_newbuildjobs(request):
 	return render(request, 'pages/newbuildsjobs.html', TmpDict)
 
 def submit_to_bugzilla(form, buildlog_id):
-	BC = Package(BuildLogsConfig, BuildLogId = buildlog_id)
-        args = {}
-        args['product'] = form.cleaned_data['Product']
-        args['component'] = form.cleaned_data['Component']
-        args['version'] = form.cleaned_data['Version']
-        args['summary'] = form.cleaned_data['Summary']
-        args['description'] = form.cleaned_data['Description']
-        args['comment'] = form.cleaned_data['EmergeInfo']
-        args['assigned_to'] = form.cleaned_data['AssigendTo']
+	BC = get_object_or_404(BuildLogsConfig, BuildLogId = buildlog_id)
+	args = {}
+	args['product'] = form.cleaned_data['Product']
+	args['component'] = form.cleaned_data['Component']
+	args['version'] = form.cleaned_data['Version']
+	args['summary'] = form.cleaned_data['Summary']
+	args['description'] = form.cleaned_data['Description']
+	args['comment'] = form.cleaned_data['EmergeInfo']
+	args['assigned_to'] = form.cleaned_data['AssigendTo']
 	args['cc_add'] = None
+	args['skip_auth'] = None
+	args['user'] = settings.BUGZILLA_USER
+	args['password'] = settings.BUGZILLA_PASS
+	args['url'] = settings.BUGZILLA_URL
 	
-        Bugz = PrettyBugz()
-        Bugz.login()
-        bugid = Bugz.post(args)
-        args['bugid'] = bugid['id']
-        # args['bugid'] = 496070
-        Bugz.modify(args)
-        
-        LogFile = BC.ConfigId.HostName + '/' + BC.ConfigId.Config + BC.LogName
+	Bugz = PrettyBugz(args)
+	Bugz.login(args)
+	bugid = Bugz.post(args)
+	args['bugid'] = bugid['id']
+	# args['bugid'] = 496070
+	Bugz.modify(args)
+	
+	LogFile = BC.ConfigId.HostName + '/' + BC.ConfigId.Config + BC.LogName
 	LogDir = settings.STATIC_ROOT + 'logs/'
-        with open(LogDir + LogFile, 'rb') as orig_file:
+	with open(LogDir + LogFile, 'rb') as orig_file:
 		with gzip.open('/tmp' + BC.LogName + '.gz', 'wb') as zipped_file:
 			zipped_file.writelines(orig_file)
 	args['filename'] = '/tmp' + BC.LogName + '.gz'
 	args['content_type'] = 'application/gzip'
-	args['comment_attach'] = 'Build log'
+	args['comment'] = 'Build log'
 	Bugz.attach(args)
-        
-        Bugz.logout()
-        return args['bugid']
+	
+	Bugz.logout(args)
+	return args['bugid']
 
 def views_buildinfo_bugzilla(request, buildlog_id):
 	B = get_object_or_404(BuildLogs, BuildLogId = buildlog_id)
@@ -225,9 +234,10 @@ def views_buildinfo_bugzilla(request, buildlog_id):
 	if request.method == 'POST':
 		form = BugForm(request.POST)
 		if form.is_valid():
-			bug = {}
-			bug['id'] = submit_to_bugzilla(form, buildlog_id)
-                        return HttpResponseRedirect(reverse('views_show_bug', kwargs={'bugid':bug.id,}))
+			bug = submit_to_bugzilla(form, buildlog_id)
+			B.BugId = bug
+			B.save()
+			return HttpResponseRedirect('/buildinfo/' + str(B.EbuildId.EbuildId) + '/' + str(buildlog_id)+ '/')
 	else:
 		if B.Fail:
 			F = get_object_or_404(BuildLogsErrors, BuildLogId = buildlog_id)
@@ -236,19 +246,20 @@ def views_buildinfo_bugzilla(request, buildlog_id):
 			FailText = ""
 		E = get_object_or_404(BuildLogsConfig, BuildLogId = buildlog_id)
 		PM = get_object_or_404(PackagesMetadata, PackageId = B.EbuildId.PackageId.PackageId)
+		PE_tmp = PackagesEmails.objects.filter(PackageId = B.EbuildId.PackageId.PackageId)
+		emails =""
+		for PE in PE_tmp:
+			emails = emails + PE.EmailId.Email
 		form = BugForm()
 		form.fields['Product'].initial = 'Gentoo Linux'
 		form.fields['Version'].initial = 'unspecified'
 		form.fields['Summary'].initial = '=' + C + '/' + P + '-' + V + '::' + R + FailText
 		form.fields['Description'].initial = B.SummeryText
 		form.fields['EmergeInfo'].initial = E.EInfoId.EmergeInfoText
-		form.fields['AssigendTo'].initial = PM.Email
+		form.fields['AssigendTo'].initial = emails
 
 	TmpDict = { 'form': form, }
 	TmpDict['B'] = B
-	return render(request, 'pages/submitbug.html', TmpDict)
-
-def views_show_bug(request, bug_id):
 	return render(request, 'pages/submitbug.html', TmpDict)
 
 def views_packagesbuild(request, ebuild_id):

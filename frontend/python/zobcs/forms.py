@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django import forms
 
 class BugForm(forms.Form):
-	ChoicesComponent = (('Application', 'Application'),
+	ChoicesComponent = (('Applications', 'Applications'),
 		     	('baselayout', 'baselayout'),
 		     	('Core system', 'Core system'),
 		     	('Development', 'Development'),
@@ -31,9 +31,9 @@ class BugForm(forms.Form):
 	Description = forms.CharField(widget=forms.Textarea, label='Description')
 	EmergeInfo = forms.CharField(widget=forms.Textarea, label='emerge --info')
 	AssigendTo = forms.EmailField(label='Assigned To')
-	CCList = forms.EmailField(label='CC List')
+	# CCList = forms.EmailField(label='CC List')
 	def __unicode__(self):
-		return u'Product : %s, Component : %s, Version : %s, Summary : %s, Description : %s, EmergeInfo : %s, AssigendTo : %s, CCList : %s' % (self.Product, self.Component, self.Version, self.Summary, self.Description, self.EmergeInfo, self.AssigendTo, self.CCList)
+		return u'Product : %s, Component : %s, Version : %s, Summary : %s, Description : %s, EmergeInfo : %s, AssigendTo : %s' % (self.Product, self.Component, self.Version, self.Summary, self.Description, self.EmergeInfo, self.AssigendTo)
 
 class ChoiceBuildConfigSetupSelect(ModelForm):
 	Config = forms.ChoiceField(choices=[(x.ConfigId, x.Config) for x in Configs.objects.filter(DefaultConfig = False)])

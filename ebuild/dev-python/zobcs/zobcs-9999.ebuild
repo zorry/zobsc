@@ -4,7 +4,7 @@
 
 EAPI="5"
 PYTHON_COMPAT=( python{2_7,3_3,3_4})
-SUPPORT_PYTHON_ABIS="1"
+#SUPPORT_PYTHON_ABIS="1"
 
 inherit distutils-r1 git-2
 
@@ -29,9 +29,9 @@ PYTHON_MODNAME="zobcs"
 
 python_prepare_all() {
 	einfo "Copying needed files from portage"
-	cp /usr/lib64/python2.7/site-packages/_emerge/actions.py ${S}/zobcs/pym
-	cp /usr/lib64/python2.7/site-packages/_emerge/main.py ${S}/zobcs/pym
-	cp /usr/lib64/python2.7/site-packages/_emerge/Scheduler.py ${S}/zobcs/pym
+	cp /usr/lib64/python2.7/site-packages/_emerge/actions.py ${S}/backend/zobcs/pym
+	cp /usr/lib64/python2.7/site-packages/_emerge/main.py ${S}/backend/zobcs/pym
+	cp /usr/lib64/python2.7/site-packages/_emerge/Scheduler.py ${S}/backend/zobcs/pym
 	einfo "Done."
 	epatch "${FILESDIR}/zobcs_portage_actions.patch"
 	epatch "${FILESDIR}/zobcs_portage_main.patch"
@@ -41,12 +41,11 @@ python_prepare_all() {
 }
 
 src_install() {
-	dodir /var/lib/zobcs
 	dodir etc/zobcs
 	insinto /etc/zobcs
 	doins ${FILESDIR}/zobcs.conf
-	dosbin ${S}/zobcs/bin/zobcs_host_jobs
-	dosbin  ${S}/zobcs/bin/zobcs_guest_jobs
+	dosbin ${S}/backend/zobcs/bin/zobcs_host_jobs
+	dosbin  ${S}/backend/zobcs/bin/zobcs_guest_jobs
 	#dodoc ${S}/zobcs/sql/zobcs.sql || die
 	#dodoc  ${S}/zobcs/doc/Setup.txt || die
 

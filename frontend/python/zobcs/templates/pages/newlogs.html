@@ -19,10 +19,9 @@
 		<td>{{ log.profile}}</td>
 		<td>{{ log.config}}</td>
 		<td>{{ log.hostname}}</td>
-		<td>{{ log.logname}}</td>
 		{% if log.BugId %}
 			<td>
-			<a href="https://bugs.gentoo.org/show_bug.cgi?id={{ log.BugId}}">{{ log.BugId}}</td>
+			<a href="https://bugs.gentoo.org/show_bug.cgi?id={{ log.BugId}}">{{ log.BugId}}</a></td>
 		{% else %}
 			<td>    </td>
 		{% endif %}

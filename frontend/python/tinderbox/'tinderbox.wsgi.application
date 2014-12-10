@@ -15,7 +15,7 @@ framework.
 """
 import os
 import sys
-sys.path.append('/srv/www/zobcs.ume.nu/tinderbox_frontend/python')
+sys.path.append('/home/zorry/zobsc/frontend/python')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'tinderbox.settings'
 
 # This application object is used by any WSGI server configured to use this

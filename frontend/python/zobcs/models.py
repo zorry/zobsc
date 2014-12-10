@@ -178,7 +178,6 @@ class BuildLogs(models.Model):
 
 class EmergeInfo(models.Model):
 	EInfoId = models.IntegerField(primary_key=True, db_column=u'einfo_id')
-	Checksum = models.CharField(max_length=100, db_column=u'checksum')
 	EmergeInfoText = models.TextField(db_column=u'emerge_info_text')
 	class Meta:
 		db_table = u'emerge_info'
