@@ -217,11 +217,7 @@ def get_emerge_info_id(settings, trees, session, config_id):
 	myaction, myopts, myfiles = parse_opts(args, silent=True)
 	status, emerge_info_list = action_info(settings, trees, myopts, myfiles)
 	emerge_info = ""
-	emerge_info = "\n".join(emerge_info_list)
-	einfo_id = add_e_info(session, emerge_info)
-	log_msg = "New Emerge --info is logged."
-	add_zobcs_logs(session, log_msg, "info", config_id)
-	return einfo_id
+	return "\n".join(emerge_info_list)
 
 def add_buildlog_main(settings, pkg, trees):
 	reader=get_conf_settings()
@@ -253,7 +249,7 @@ def add_buildlog_main(settings, pkg, trees):
 	build_log_dict['logfilename'] = settings.get("PORTAGE_LOG_FILE").split(host_config)[1]
 	log_msg = "Logfile name: %s" % (settings.get("PORTAGE_LOG_FILE"),)
 	add_zobcs_logs(session, log_msg, "info", config_id)
-	build_log_dict['einfo_id'] = get_emerge_info_id(settings, trees, session, config_id)
+	build_log_dict['emerge_info'] = get_emerge_info_id(settings, trees, session, config_id)
 	log_id = add_new_buildlog(session, build_dict, build_log_dict)
 
 	if log_id is None:

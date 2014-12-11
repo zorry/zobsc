@@ -184,7 +184,8 @@ def add_new_buildlog(session, build_dict, build_log_dict):
 			if log_hash[0] == build_log_dict['log_hash'] and build_dict['build_useflags'] == useflagsdict:
 				if session.query(BuildLogsConfig).filter(BuildLogsConfig.ConfigId.in_([build_dict['config_id']])).filter_by(BuildLogId = build_log_id[0]):
 					return None, True
-				NewBuildLogConfig = BuildLogsConfig(BuildLogId = build_log_id[0], ConfigId = build_dict['config_id'], LogName = build_log_dict['logfilename'], EInfoId = build_log)
+				e_info_id = add_e_info(session, build_log_dict['emerge_info'])
+				NewBuildLogConfig = BuildLogsConfig(BuildLogId = build_log_id[0], ConfigId = build_dict['config_id'], LogName = build_log_dict['logfilename'], EInfoId = e_info_id)
 				session.add(NewBuildLogConfig)
 				session.commit()
 				return build_log_id[0], True
@@ -204,7 +205,8 @@ def add_new_buildlog(session, build_dict, build_log_dict):
 				NewError = BuildLogsErrors(BuildLogId = build_log_id, ErrorId = error)
 				session.add(NewError)
 				session.commit()
-		NewBuildLogConfig = BuildLogsConfig(BuildLogId = build_log_id, ConfigId = build_dict['config_id'], LogName = build_log_dict['logfilename'], EInfoId = build_log_dict['einfo_id'])
+		e_info_id = add_e_info(session, build_log_dict['emerge_info'])
+		NewBuildLogConfig = BuildLogsConfig(BuildLogId = build_log_id, ConfigId = build_dict['config_id'], LogName = build_log_dict['logfilename'], EInfoId = e_info_id)
 		session.add(NewBuildLogConfig)
 		session.flush()
 		log_id = NewBuildLogConfig.LogId
