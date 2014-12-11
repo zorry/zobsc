@@ -229,7 +229,7 @@ def add_buildlog_main(settings, pkg, trees):
 	session = Session()
 	config_id = get_config_id(session, config, hostname)
 	build_dict = get_build_dict_db(session, config_id, settings, pkg)
-	if build_dict is None:
+	if build_dict is None or pkg.type_name == "binary":
 		log_msg = "Package %s:%s is NOT logged." % (pkg.cpv, pkg.repo,)
 		add_zobcs_logs(session, log_msg, "info", config_id)
 		session.close
