@@ -111,20 +111,21 @@ def search_buildlog(session, logfile_text, text_rows):
 					hilight_tmp['endline'] = index + search_pattern.HiLightEnd
 					if hilight_tmp['endline'] > text_rows:
 						hilight_tmp['endline'] = text_rows
-				else:
-					hilight_tmp['endline'] = None
-					i = index + 1
-					if i >= text_rows:
-						hilight_tmp['endline'] = text_rows
-					else:
-						while hilight_tmp['endline'] == None:
-							if text_rows > i:
-								if re.search(search_pattern.HiLightSearchEnd, logfile_text[i]):
-									hilight_tmp['endline'] = i
-								else:
-									i = i + 1
-							else:
-								hilight_tmp['endline'] = text_row
+				elif not search_pattern.HiLightSearchEnd == "" and (index + 1) >= text_rows:
+                                                hilight_tmp['endline'] = text_rows
+                                else:
+                                        i = index + 1
+                                        while i != text_rows:
+                                                if re.search(search_pattern.HiLightSearchPattern, logfile_text[i]):
+                                                        i = i + 1
+                                                else:
+                                                        break
+                                        if i >= text_rows:
+                                                hilight_tmp['endline'] = text_rows
+                                        if re.search(search_pattern.HiLightSearchEnd, logfile_text[i]):
+                                                hilight_tmp['endline'] = i
+                                        else:
+                                                hilight_tmp['endline'] = i - 1
 				hilight_list.append(hilight_tmp)
 
 	new_hilight_dict = {}
@@ -228,7 +229,9 @@ def add_buildlog_main(settings, pkg, trees):
 	Session = sessionmaker(bind=NewConnection(zobcs_settings_dict))
 	session = Session()
 	config_id = get_config_id(session, config, hostname)
-	build_dict = get_build_dict_db(session, config_id, settings, pkg)
+	build_dict = {}
+	if not pkg.type_name == "binary":
+		build_dict = get_build_dict_db(session, config_id, settings, pkg)
 	if build_dict is None or pkg.type_name == "binary":
 		log_msg = "Package %s:%s is NOT logged." % (pkg.cpv, pkg.repo,)
 		add_zobcs_logs(session, log_msg, "info", config_id)

@@ -155,6 +155,7 @@ class HiLight(Base):
 	HiLightId = Column('hilight_id', Integer, primary_key=True)
 	HiLightSearch = Column('hilight_search', String(50))
 	HiLightSearchEnd = Column('hilight_search_end', String(50))
+	HiLightSearchPattern = Column('hilight_search_pattern', String(50))
 	HiLightCssId = Column('hilight_css_id', Integer, ForeignKey('hilight_css.hilight_css_id'))
 	HiLightStart = Column('hilight_start', Integer)
 	HiLightEnd = Column('hilight_end', Integer)

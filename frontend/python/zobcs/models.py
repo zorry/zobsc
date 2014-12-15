@@ -209,13 +209,14 @@ class HiLight(models.Model):
 	HiLightId = models.IntegerField(primary_key=True, db_column=u'hilight_id')
 	HiLightSearch = models.CharField(max_length=50, db_column='hilight_search')
 	HiLightSearchEnd = models.CharField(max_length=50, db_column='hilight_search_end')
+	HiLightSearchPattern = models.CharField(max_length=50, db_column='hilight_search_pattern')
 	HiLightCssId = models.ForeignKey(HiLightCss, db_column='hilight_css_id')
 	HiLightStart = models.IntegerField(max_length=1, db_column=u'hilight_start')
 	HiLightEnd = models.IntegerField(max_length=1, db_column=u'hilight_end')
 	class Meta:
 		db_table = u'hilight'
 		def __unicode__(self):
-			return u'HiLightId : %s, HiLightSearch : %s, HiLightSearchEnd : %s, HiLightCssId: %s, HiLightStart : %s, HiLightEnd : %s' % (self.HiLightId, self.HiLightSearch, self.HiLightSearchEnd, self.HiLightCSS, self.HiLightStart, self.HiLightEnd)
+			return u'HiLightId : %s, HiLightSearch : %s, HiLightSearchEnd : %s, HiLightSearchPattern : %s, HiLightCssId: %s, HiLightStart : %s, HiLightEnd : %s' % (self.HiLightId, self.HiLightSearch, self.HiLightSearchEnd, self.HiLightSearchPattern, self.HiLightCSS, self.HiLightStart, self.HiLightEnd)
 
 class BuildLogsHiLight(models.Model):
 	Id = models.IntegerField(primary_key=True, db_column=u'id')
