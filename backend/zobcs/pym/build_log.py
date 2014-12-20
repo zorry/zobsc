@@ -18,7 +18,7 @@ portage.proxy.lazyimport.lazyimport(globals(),
 )
 
 from zobcs.repoman_zobcs import zobcs_repoman
-from zobcs.text import get_log_text_list
+from zobcs.text import get_log_text_dict
 from zobcs.package import zobcs_package
 from zobcs.readconf import get_conf_settings
 from zobcs.flags import zobcs_use_flags
@@ -96,12 +96,10 @@ def get_build_dict_db(session, config_id, settings, pkg):
 		build_dict['build_job_id'] = build_job_id
 	return build_dict
 
-def search_buildlog(session, logfile_text, text_rows):
+def search_buildlog(session, logfile_text_dict, max_text_lines):
 	log_search_list = get_hilight_info(session)
-	index = 0
 	hilight_list = []
-	for textline in logfile_text:
-		index = index + 1
+	for index, text_line in logfile_text_dict.items():
 		for search_pattern in log_search_list:
 			if re.search(search_pattern.HiLightSearch, textline):
 				hilight_tmp = {}
@@ -109,23 +107,34 @@ def search_buildlog(session, logfile_text, text_rows):
 				hilight_tmp['hilight'] = search_pattern.HiLightCssId
 				if search_pattern.HiLightSearchEnd == "":
 					hilight_tmp['endline'] = index + search_pattern.HiLightEnd
-					if hilight_tmp['endline'] > text_rows:
-						hilight_tmp['endline'] = text_rows
-				elif not search_pattern.HiLightSearchEnd == "" and (index + 1) >= text_rows:
-                                                hilight_tmp['endline'] = text_rows
-                                else:
-                                        i = index + 1
-                                        while i != text_rows:
-                                                if re.search(search_pattern.HiLightSearchPattern, logfile_text[i]):
-                                                        i = i + 1
-                                                else:
-                                                        break
-                                        if i >= text_rows:
-                                                hilight_tmp['endline'] = text_rows
-                                        if re.search(search_pattern.HiLightSearchEnd, logfile_text[i]):
-                                                hilight_tmp['endline'] = i
-                                        else:
-                                                hilight_tmp['endline'] = i - 1
+					if hilight_tmp['endline'] > max_text_lines:
+						hilight_tmp['endline'] = max_text_lines
+				elif not search_pattern.HiLightSearchEnd == "" and (index + 1) >= max_text_lines:
+						hilight_tmp['endline'] = max_text_lines
+				else:
+					i = index + 1
+					match = True
+					while match:
+						if i >= max_text_lines:
+							match = False
+							break
+						if re.search(search_pattern.HiLightSearchPattern, logfile_text[i]) and re.search(search_pattern.HiLightSearchPattern, logfile_text[i + 1]):
+							for search_pattern2 in log_search_list:
+								if re.search(search_pattern2.HiLightSearch, logfile_text[i]):
+									match = False
+							if match:
+								i = i + 1
+						elif re.search(search_pattern.HiLightSearchPattern, logfile_text[i]) and re.search(search_pattern.HiLightSearchEnd, logfile_text[i + 1]):
+							i = i + 1
+							match = False
+						else:
+							match = False
+					if i >= max_text_lines:
+						hilight_tmp['endline'] = max_text_lines
+					if re.search(search_pattern.HiLightSearchEnd, logfile_text[i]):
+						hilight_tmp['endline'] = i
+					else:
+						hilight_tmp['endline'] = i - 1
 				hilight_list.append(hilight_tmp)
 
 	new_hilight_dict = {}
@@ -172,9 +181,8 @@ def search_buildlog(session, logfile_text, text_rows):
 def get_buildlog_info(session, settings, pkg, build_dict):
 	myportdb = portage.portdbapi(mysettings=settings)
 	init_repoman = zobcs_repoman(settings, myportdb)
-	logfile_text, text_rows = get_log_text_list(settings.get("PORTAGE_LOG_FILE"))
-	hilight_dict = search_buildlog(session, logfile_text, text_rows)
-	build_log_dict = {}
+	logfile_text_dict, max_text_lines = get_log_text_dict(settings.get("PORTAGE_LOG_FILE"))
+	hilight_dict = search_buildlog(session, logfile_text_dict, max_text_lines)
 	error_log_list = []
 	qa_error_list = []
 	repoman_error_list = []
@@ -182,15 +190,15 @@ def get_buildlog_info(session, settings, pkg, build_dict):
 	error_info_list = get_error_info_list(session)
 	for k, v in sorted(hilight_dict.items()):
 		if v['startline'] == v['endline']:
-			error_log_list.append(logfile_text[k -1])
+			error_log_list.append(logfile_text[k ])
 			if v['hilight_css_id'] == "3" or v['hilight_css_id'] == "4": # qa = 3 and 4
-				qa_error_list.append(logfile_text[k -1])
+				qa_error_list.append(logfile_text[k])
 		else:
 			i = k
 			while i != (v['endline'] + 1):
-				error_log_list.append(logfile_text[i -1])
-				if v['hilight_css_id'] == "3" or v['hilight_css_id'] == "3": # qa = 3 and 4
-					qa_error_list.append(logfile_text[i -1])
+				error_log_list.append(logfile_text[i])
+				if v['hilight_css_id'] == "3" or v['hilight_css_id'] == "4": # qa = 3 and 4
+					qa_error_list.append(logfile_text[i])
 				i = i +1
 
 	# Run repoman check_repoman()
@@ -205,6 +213,7 @@ def get_buildlog_info(session, settings, pkg, build_dict):
 			for error_info in error_info_list:
 				if re.search(error_info.ErrorSearch, error_log_line):
 					sum_build_log_list.append(error_info.ErrorId)
+	build_log_dict = {}
 	build_log_dict['repoman_error_list'] = repoman_error_list
 	build_log_dict['qa_error_list'] = qa_error_list
 	build_log_dict['error_log_list'] = error_log_list
@@ -229,10 +238,11 @@ def add_buildlog_main(settings, pkg, trees):
 	Session = sessionmaker(bind=NewConnection(zobcs_settings_dict))
 	session = Session()
 	config_id = get_config_id(session, config, hostname)
-	build_dict = {}
-	if not pkg.type_name == "binary":
+	if pkg.type_name == "binary":
+		build_dict = None
+	else:
 		build_dict = get_build_dict_db(session, config_id, settings, pkg)
-	if build_dict is None or pkg.type_name == "binary":
+	if build_dict is None:
 		log_msg = "Package %s:%s is NOT logged." % (pkg.cpv, pkg.repo,)
 		add_zobcs_logs(session, log_msg, "info", config_id)
 		session.close

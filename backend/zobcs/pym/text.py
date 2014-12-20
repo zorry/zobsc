@@ -35,16 +35,14 @@ def  get_ebuild_cvs_revision(filename):
 		cvs_revision = ''
 	return cvs_revision
 
-def  get_log_text_list(filename):
-	"""Return the log contents as a list"""
+def  get_log_text_dict(filename):
+	"""Return the log contents as a dict"""
 	try:
-		logfile = open(filename, encoding='utf-8')
+		logfile_text = open(filename, encoding='utf-8').readlines()
 	except:
 		return None, 0
-	text = []
-	index = 1
-	dataLines = logfile.readlines()
-	for i in dataLines:
-		text.append(i)
-		index = index + 1
-	return text, index
+	logfile_dict = {}
+	for index, text_line in enumerate(logfile_text, start=1):
+		logfile_dict[index] = text_line
+	text_lines = len(logfile_dict)
+	return logfile_dict, text_lines
