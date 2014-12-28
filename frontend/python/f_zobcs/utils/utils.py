@@ -1,4 +1,4 @@
-from zobcs.models import EbuildsMetadata
+from f_zobcs.models import EbuildsMetadata
 def Get_CPVR(ebuild_id):
 	EM = EbuildsMetadata.objects.get(EbuildId = ebuild_id)
 	adict = {}

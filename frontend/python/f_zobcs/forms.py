@@ -1,5 +1,5 @@
-from zobcs.models import Configs, BuildJobsUse, BuildJobs
-from zobcs.utils.builduseflags import config_get_use
+from f_zobcs.models import Configs, BuildJobsUse, BuildJobs
+from f_zobcs.utils.builduseflags import config_get_use
 from django.forms import ModelForm
 from django.shortcuts import get_object_or_404
 from django import forms

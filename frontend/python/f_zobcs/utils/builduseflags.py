@@ -1,4 +1,4 @@
-from zobcs.models import *
+from f_zobcs.models import *
 from django.shortcuts import get_object_or_404
 from zobcs.utils.flags import zobcs_use_flags
 import portage

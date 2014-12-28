@@ -1,8 +1,8 @@
-from zobcs.models import *
-from zobcs.forms import *
-from zobcs.utils.cli import PrettyBugz
-from zobcs.utils.builduseflags import config_get_use
-from zobcs.utils.utils import Get_CPVR
+from f_zobcs.models import *
+from f_zobcs.forms import *
+from f_zobcs.utils.cli import PrettyBugz
+from f_zobcs.utils.builduseflags import config_get_use
+from f_zobcs.utils.utils import Get_CPVR
 from django.shortcuts import render, get_object_or_404, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.conf import settings

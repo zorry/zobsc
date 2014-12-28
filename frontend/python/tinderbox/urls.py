@@ -4,7 +4,7 @@ from django.conf.urls import patterns, include, url
 # from django.contrib import admin
 # admin.autodiscover()
 
-urlpatterns = patterns('zobcs.views',
+urlpatterns = patterns('f_zobcs.views',
     # Examples:
     url(r'^/$', 'views_main'),
     url(r'^categories/$', 'views_categories'),

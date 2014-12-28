@@ -10,10 +10,10 @@
 <script type="text/javascript" src="{{STATIC_URL}}js/main.js"></script>
 </head>
 <body>
-<div class="navbar">
+<div class="navbar-nav">
 <div class="navbar-inner">
 <a class="navbar-brand" href="/">ZOBCS</a>
-<ul class="nav">
+<ul class="navbar-nav">
     <li class="active"><a href="/">Home</a></li>
     <li id="categories"><a href="/categories">Packages</a></li>
     <li id="contact"><a href="/contact">Contact</a></li>
@@ -38,11 +38,11 @@
 </div>
 <div class="container">
 <div class="row">
-<div class="span11">
+<div class="col-md-11">
 {% block content %}
 {% endblock %}
 </div>
-<div class=span1>Top10</div>
+<div class=col-md-1>Top10</div>
 </div>
 </div>
 </body>
