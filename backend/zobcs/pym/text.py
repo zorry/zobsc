@@ -3,6 +3,7 @@ import sys
 import re
 import os
 import errno
+from portage.util import grablines
 
 def  get_file_text(filename):
 	# Return the filename contents
@@ -37,12 +38,9 @@ def  get_ebuild_cvs_revision(filename):
 
 def  get_log_text_dict(filename):
 	"""Return the log contents as a dict"""
-	try:
-		logfile_text = open(filename, encoding='utf-8').readlines()
-	except:
-		return None, 0
 	logfile_dict = {}
-	for index, text_line in enumerate(logfile_text, start=1):
+	index = 1
+	for text_line in grablines(filename):
 		logfile_dict[index] = text_line
-	text_lines = len(logfile_dict)
-	return logfile_dict, text_lines
+		index = index + 1
+	return logfile_dict, index - 1

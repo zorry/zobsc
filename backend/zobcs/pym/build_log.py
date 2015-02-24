@@ -99,7 +99,7 @@ def get_build_dict_db(session, config_id, settings, pkg):
 def search_buildlog(session, logfile_text_dict, max_text_lines):
 	log_search_list = get_hilight_info(session)
 	hilight_list = []
-	for index, text_line in logfile_text_dict.items():
+	for index, text_line in logfile_tex_dict.items():
 		for search_pattern in log_search_list:
 			if re.search(search_pattern.HiLightSearch, textline):
 				hilight_tmp = {}
@@ -118,20 +118,20 @@ def search_buildlog(session, logfile_text_dict, max_text_lines):
 						if i >= max_text_lines:
 							match = False
 							break
-						if re.search(search_pattern.HiLightSearchPattern, logfile_text[i]) and re.search(search_pattern.HiLightSearchPattern, logfile_text[i + 1]):
+						if re.search(search_pattern.HiLightSearchPattern, logfile_text_dict[i]) and re.search(search_pattern.HiLightSearchPattern, logfile_text_dict[i + 1]):
 							for search_pattern2 in log_search_list:
-								if re.search(search_pattern2.HiLightSearch, logfile_text[i]):
+								if re.search(search_pattern2.HiLightSearch, logfile_text_dict[i]):
 									match = False
 							if match:
 								i = i + 1
-						elif re.search(search_pattern.HiLightSearchPattern, logfile_text[i]) and re.search(search_pattern.HiLightSearchEnd, logfile_text[i + 1]):
+						elif re.search(search_pattern.HiLightSearchPattern, logfile_text_dict[i]) and re.search(search_pattern.HiLightSearchEnd, logfile_text_dict[i + 1]):
 							i = i + 1
 							match = False
 						else:
 							match = False
 					if i >= max_text_lines:
 						hilight_tmp['endline'] = max_text_lines
-					if re.search(search_pattern.HiLightSearchEnd, logfile_text[i]):
+					if re.search(search_pattern.HiLightSearchEnd, logfile_text_dict[i]):
 						hilight_tmp['endline'] = i
 					else:
 						hilight_tmp['endline'] = i - 1
@@ -181,8 +181,8 @@ def search_buildlog(session, logfile_text_dict, max_text_lines):
 def get_buildlog_info(session, settings, pkg, build_dict):
 	myportdb = portage.portdbapi(mysettings=settings)
 	init_repoman = zobcs_repoman(settings, myportdb)
-	logfile_text_dict, max_text_lines = get_log_text_dict(settings.get("PORTAGE_LOG_FILE"))
-	hilight_dict = search_buildlog(session, logfile_text_dict, max_text_lines)
+	logfile_text_dict_dict, max_text_lines = get_log_text_dict(settings.get("PORTAGE_LOG_FILE"))
+	hilight_dict = search_buildlog(session, logfile_text_dict_dict, max_text_lines)
 	error_log_list = []
 	qa_error_list = []
 	repoman_error_list = []
@@ -190,15 +190,15 @@ def get_buildlog_info(session, settings, pkg, build_dict):
 	error_info_list = get_error_info_list(session)
 	for k, v in sorted(hilight_dict.items()):
 		if v['startline'] == v['endline']:
-			error_log_list.append(logfile_text[k ])
+			error_log_list.append(logfile_text_dict[k ])
 			if v['hilight_css_id'] == "3" or v['hilight_css_id'] == "4": # qa = 3 and 4
-				qa_error_list.append(logfile_text[k])
+				qa_error_list.append(logfile_text_dict[k])
 		else:
 			i = k
 			while i != (v['endline'] + 1):
-				error_log_list.append(logfile_text[i])
+				error_log_list.append(logfile_text_dict[i])
 				if v['hilight_css_id'] == "3" or v['hilight_css_id'] == "4": # qa = 3 and 4
-					qa_error_list.append(logfile_text[i])
+					qa_error_list.append(logfile_text_dict[i])
 				i = i +1
 
 	# Run repoman check_repoman()
