@@ -69,7 +69,8 @@ def add_builds_jobs (session, new_build_jobs_list, config_id):
 			log_msg = "B %s:%s USE: %s %s:%s" %  (k, v['repo'], use_flagsDict, ConfigInfo.Hostname, ConfigInfo.Config,)
 			add_zobcs_logs(session, log_msg, "info", config_id)
 		else:
-			
+				pass
+
 def update_cpv_db(session, config_id, zobcs_settings_dict):
 	GuestBusy = True
 	log_msg = "Waiting for Guest to be idel"
