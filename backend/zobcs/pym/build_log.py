@@ -85,7 +85,7 @@ def get_build_dict_db(session, config_id, settings, pkg):
 				log_msg = "%s:%s:%s Dups of checksums" % (pkg.cpv, repo, ebuild_id,)
 				add_zobcs_logs(session, log_msg, "error", config_id)
 				old_ebuild_id_list.append(ebuild_id)
-			add_old_ebuild(session, build_dict['package_id'], old_ebuild_id_list)
+			add_old_ebuild(session, , old_ebuild_id_list)
 		return
 	build_dict['ebuild_id'] = ebuild_id_list
 
@@ -332,7 +332,7 @@ def log_fail_queru(session, build_dict, settings):
 				build_log_dict['logfilename'] = ""
 				build_log_dict['hilight_dict'] = {}
 			settings2, trees, tmp = load_emerge_config()
-			build_log_dict['einfo_id'] = get_emerge_info_id(settings2, trees, session, config_id)
+			build_log_dict['emerge_info'] = get_emerge_info_id(settings2, trees, session, config_id)
 			log_id = add_new_buildlog(session, build_dict, build_log_dict)
 			del_old_build_jobs(session, build_dict['build_job_id'])
 

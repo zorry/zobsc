@@ -17,6 +17,11 @@ def add_zobcs_logs(session, log_msg, log_type, config_id):
 	session.add(Add_Log)
 	session.commit()
 
+def update_deamon_status(session, status, config_id):
+	ConfigInfo = session.query(ConfigsMetaData).filter_by(ConfigId = config_id).one()
+	ConfigInfo.Status = status
+	session.commit()
+
 def get_jobs(session, config_id):
 	JobsInfo = session.query(Jobs).filter_by(Status = 'Waiting').filter_by(ConfigId = config_id).order_by(Jobs.JobId).all()
 	if JobsInfo == []:
@@ -477,3 +482,10 @@ def get_ebuild_id_db(session, checksum, package_id):
 			ebuilds_id.append(EbuildInfo.EbuildId)
 		return ebuilds_id, True
 	return EbuildInfos.EbuildId, False
+
+def check_host_updatedb(session):
+	try:
+		JobsInfo = session.query(Jobs).filter_by(Status = 'Done').filter_by(JobType = 'updatedb').one()
+	except NoResultFound as e:
+		return True
+	return False

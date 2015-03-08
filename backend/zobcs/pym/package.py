@@ -34,7 +34,7 @@ class zobcs_package(object):
 		for config_id in config_list:
 			ConfigInfo = get_config_info(self._session, config_id)
 			ConfigsMetaData = get_configmetadata_info(self._session, config_id)
-			if ConfigsMetaData.Auto and ConfigsMetaData.Active:
+			if ConfigsMetaData.Auto and ConfigsMetaData.Active and ConfigMetadata.Status == 'Stopped':
 				mysettings_setup = self.change_config(ConfigInfo.Hostname + "/" + ConfigInfo.Config)
 				myportdb_setup = portage.portdbapi(mysettings=mysettings_setup)
 
@@ -122,6 +122,7 @@ class zobcs_package(object):
 	def add_new_build_job_db(self, ebuild_id_list, packageDict, config_cpv_listDict):
 		# Get the needed info from packageDict and config_cpv_listDict and put that in buildqueue
 		# Only add it if ebuild_version in packageDict and config_cpv_listDict match
+		new_build_jobs_dict = {}
 		if config_cpv_listDict is not None:
 			# Unpack config_cpv_listDict
 			for k, v in config_cpv_listDict.items():
@@ -143,14 +144,17 @@ class zobcs_package(object):
 
 					# Comper and add the cpv to buildqueue
 					if build_cpv == k:
-						add_new_build_job(self._session, ebuild_id, config_id, use_flagsDict)
-						# B = Build cpv use-flags config
-						ConfigInfo = get_config_info(self._session, config_id)
-
-						# FIXME log_msg need a fix to log the use flags corect.
-						log_msg = "B %s:%s USE: %s %s:%s" %  (k, v['repo'], use_flagsDict, ConfigInfo.Hostname, ConfigInfo.Config,)
-						add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+						attDict = {}
+						attDict['ebuild_id'] = ebuild_id
+						attDict['use_flags'] = use_flagsDict
+						attDict['build_cpv'] = build_cpv
+						attDict['repo'] = v['repo']
+						new_build_jobs_dict[config_id] = attDict
 					i = i +1
+		if new_build_jobs_dict == {}:
+			return None
+		else:
+			return new_build_jobs_dict
 
 	def get_package_metadataDict(self, pkgdir, package_id):
 		# Make package_metadataDict
@@ -216,7 +220,8 @@ class zobcs_package(object):
 		config_cpv_listDict = self.config_match_ebuild(cp, config_list)
 
 		# Add the ebuild to the build jobs table if needed
-		self.add_new_build_job_db(ebuild_id_list, packageDict, config_cpv_listDict)
+		new_build_jobs_dict = self.add_new_build_job_db(ebuild_id_list, packageDict, config_cpv_listDict)
+		return new_build_jobs_dict
 
 	def add_new_package_db(self, cp, repo):
 		# Add new categories package ebuild to tables package and ebuilds
@@ -238,7 +243,7 @@ class zobcs_package(object):
 			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 			log_msg = "C %s:%s ... Fail." % (cp, repo)
 			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-			return
+			return None
 		package_id = add_new_package_sql(self._session, cp, repo)
 		
 		package_metadataDict = self.get_package_metadataDict(pkgdir, package_id)
@@ -251,7 +256,7 @@ class zobcs_package(object):
 			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 			log_msg = "C %s:%s ... Fail." % (cp, repo)
 			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-			return
+			return None
 
 		# Make the needed packageDict with ebuild infos so we can add it later to the db.
 		packageDict ={}
@@ -260,9 +265,10 @@ class zobcs_package(object):
 		for cpv in sorted(ebuild_list_tree):
 			packageDict[cpv] = self.get_packageDict(pkgdir, cpv, repo)
 
-		self.add_package(packageDict, package_metadataDict, package_id, new_ebuild_id_list, old_ebuild_id_list, manifest_checksum_tree)
+		new_build_jobs_dict = self.add_package(packageDict, package_metadataDict, package_id, new_ebuild_id_list, old_ebuild_id_list, manifest_checksum_tree)
 		log_msg = "C %s:%s ... Done." % (cp, repo)
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+		return new_build_jobs_dict
 
 	def update_package_db(self, package_id):
 		# Update the categories and package with new info
@@ -274,6 +280,7 @@ class zobcs_package(object):
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 		repodir = self._myportdb.getRepositoryPath(repo)
 		pkgdir = repodir + "/" + cp # Get RepoDIR + cp
+		new_build_jobs_dict = None
 
 		# Get the cp mainfest file checksum
 		try:
@@ -284,7 +291,7 @@ class zobcs_package(object):
 			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 			log_msg = "C %s:%s ... Fail." % (cp, repo)
 			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-			return
+			return None
 
 		# if we NOT have the same checksum in the db update the package
 		if manifest_checksum_tree != PackageInfo.Checksum:
@@ -302,7 +309,7 @@ class zobcs_package(object):
 				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 				log_msg = "C %s:%s ... Fail." % (cp, repo)
 				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-				return
+				return None
 			packageDict ={}
 			new_ebuild_id_list = []
 			old_ebuild_id_list = []
@@ -348,7 +355,8 @@ class zobcs_package(object):
 					ebuild_id , status = get_ebuild_id_db(self._session, ebuild_version_checksum_tree, package_id)
 					new_ebuild_id_list.append(ebuild_id)
 			package_metadataDict = self.get_package_metadataDict(pkgdir, package_id)
-			self.add_package(packageDict, package_metadataDict, package_id, new_ebuild_id_list, old_ebuild_id_list, manifest_checksum_tree)
+			new_build_jobs_dict = self.add_package(packageDict, package_metadataDict, package_id, new_ebuild_id_list, old_ebuild_id_list, manifest_checksum_tree)
 
 		log_msg = "C %s:%s ... Done." % (cp, repo)
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+		return new_build_jobs_dict

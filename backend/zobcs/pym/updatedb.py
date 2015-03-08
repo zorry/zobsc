@@ -6,11 +6,12 @@ from __future__ import print_function
 import sys
 import os
 import multiprocessing
+import time
 import portage
 from sqlalchemy.orm import scoped_session, sessionmaker
 from zobcs.ConnectionManager import NewConnection
 from zobcs.sqlquerys import add_zobcs_logs, get_package_info, update_repo_db, \
-	update_categories_db
+	update_categories_db, get_configmetadata_info
 from zobcs.check_setup import check_make_conf
 from zobcs.package import zobcs_package
 # Get the options from the config file set in zobcs.readconf
@@ -56,10 +57,40 @@ def update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, conf
 		init_package.add_new_package_db(cp, repo)
 	Session.remove()
 
+def add_builds_jobs (session, new_build_jobs_list, config_id):
+	SyncBuildJobs = {}
+	for k, v in new_build_jobs_list.items():
+		ConfigMetadata = get_configmetadata_info(session, k)
+		if not ConfigMetadata.ConfigSync:
+			add_new_build_job(session, v['ebuild_id'], k, v['use_flagsDict'])
+			# B = Build cpv use-flags config
+			ConfigInfo = get_config_info(session, config_id)
+			# FIXME log_msg need a fix to log the use flags corect.
+			log_msg = "B %s:%s USE: %s %s:%s" %  (k, v['repo'], use_flagsDict, ConfigInfo.Hostname, ConfigInfo.Config,)
+			add_zobcs_logs(session, log_msg, "info", config_id)
+		else:
+			
 def update_cpv_db(session, config_id, zobcs_settings_dict):
+	GuestBusy = True
+	log_msg = "Waiting for Guest to be idel"
+	add_zobcs_logs(session, log_msg, "info", config_id)
+	guestid_list = []
+	for config in get_config_all_info(session):
+		if not config.Host
+			guestid_list.append(config.ConfigId)
+	Status_list = []
+	for guest_id in guestid_list:
+		ConfigMetadata = get_configmetadata_info(session, guest_id)
+		Status_list.append(ConfigMetadata.Status)
+	while GuestBusy:
+		if not 'Runing' in Status_list:
+			GuestBusy = False
+		time.sleep(30)
+
 	mysettings =  init_portage_settings(session, config_id, zobcs_settings_dict)
 	log_msg = "Checking categories, package, ebuilds"
 	add_zobcs_logs(session, log_msg, "info", config_id)
+	new_build_jobs_list = []
 
 	# Setup portdb, package
 	myportdb = portage.portdbapi(mysettings=mysettings)
@@ -91,14 +122,16 @@ def update_cpv_db(session, config_id, zobcs_settings_dict):
 
 		# Run the update package for all package in the list and in a multiprocessing pool
 		for cp in sorted(package_list_tree):
-			pool.apply_async(update_cpv_db_pool, (mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id,))
+			new_build_jobs_list.append(pool.apply_async(update_cpv_db_pool, (mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id,)))
 			# use this when debuging
 			#update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id)
 
 	#close and join the multiprocessing pools
 	pool.close()
 	pool.join()
-
+	
+	add_builds_jobs (session, new_build_jobs_list)
+	
 	log_msg = "Checking categories, package and ebuilds ... done"
 	add_zobcs_logs(session, log_msg, "info", config_id)
 

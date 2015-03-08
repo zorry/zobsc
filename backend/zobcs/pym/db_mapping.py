@@ -42,6 +42,7 @@ class ConfigsMetaData(Base):
 	KeywordId = Column('keyword_id', Integer, ForeignKey('keywords.keyword_id'))
 	MakeConfText = Column('make_conf_text', Text)
 	Checksum = Column('checksum', String(100))
+	ConfigSync = Column('configsync', Boolean, default=False)
 	Active = Column('active', Boolean, default=False)
 	ConfigErrorText = Column('config_error_text', Text)
 	Updateing = Column('updateing', Boolean, default=False)
