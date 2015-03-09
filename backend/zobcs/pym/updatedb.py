@@ -77,7 +77,7 @@ def update_cpv_db(session, config_id, zobcs_settings_dict):
 	add_zobcs_logs(session, log_msg, "info", config_id)
 	guestid_list = []
 	for config in get_config_all_info(session):
-		if not config.Host
+		if not config.Host:
 			guestid_list.append(config.ConfigId)
 	Status_list = []
 	for guest_id in guestid_list:
