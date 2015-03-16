@@ -55,7 +55,7 @@ class ConfigsMetaData(Base):
 class Categories(Base):
 	CategoryId = Column('category_id', Integer, primary_key=True)
 	Category = Column('category', String(150))
-	Active = Column('active', Boolean, default=False)
+	Active = Column('active', Boolean, default=True)
 	TimeStamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
 	__tablename__ = 'categories'
 

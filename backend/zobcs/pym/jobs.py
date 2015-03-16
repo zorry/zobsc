@@ -45,8 +45,9 @@ def jobs_main(session, config_id):
 			update_job_list(session, "Runing", job_id)
 			log_msg = "Job %s is runing." % (job_id,)
 			add_zobcs_logs(session, log_msg, "info", config_id)
-			#result =  git_pull(session)
-			if result is True:
+			result = True
+			# result = git_pull(session)
+			if result:
 				update_job_list(session, "Done", job_id)
 				log_msg = "Job %s is done.." % (job_id,)
 				add_zobcs_logs(session, log_msg, "info", config_id)
@@ -59,7 +60,7 @@ def jobs_main(session, config_id):
 			log_msg = "Job %s is runing." % (job_id,)
 			add_zobcs_logs(session, log_msg, "info", config_id)
 			#result =  sync_tree(session)
-			if result is True:
+			if result:
 				update_job_list(session, "Done", job_id)
 				log_msg = "Job %s is done.." % (job_id,)
 				add_zobcs_logs(session, log_msg, "info", config_id)
@@ -72,7 +73,7 @@ def jobs_main(session, config_id):
 			log_msg = "Job %s is runing." % (job_id,)
 			add_zobcs_logs(session, log_msg, "info", config_id)
 			result = update_db_main(session, config_id)
-			if result is True:
+			if result:
 				update_job_list(session, "Done", job_id)
 				log_msg = "Job %s is done.." % (job_id,)
 				add_zobcs_logs(session, log_msg, "info", config_id)

@@ -11,7 +11,8 @@ import portage
 from sqlalchemy.orm import scoped_session, sessionmaker
 from zobcs.ConnectionManager import NewConnection
 from zobcs.sqlquerys import add_zobcs_logs, get_package_info, update_repo_db, \
-	update_categories_db, get_configmetadata_info
+	update_categories_db, get_configmetadata_info, get_config_all_info, add_new_build_job, \
+	get_config_info
 from zobcs.check_setup import check_make_conf
 from zobcs.package import zobcs_package
 # Get the options from the config file set in zobcs.readconf
@@ -51,25 +52,55 @@ def update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, conf
 	PackagesInfo = get_package_info(session2, categories, package, repo)
 	if PackagesInfo:  
 		# Update the packages with ebuilds
-		init_package.update_package_db(PackagesInfo.PackageId)
+		new_build_jobs = init_package.update_package_db(PackagesInfo.PackageId)
 	else:
 		# Add new package with ebuilds
-		init_package.add_new_package_db(cp, repo)
+		new_build_jobs =init_package.add_new_package_db(cp, repo)
 	Session.remove()
+	return new_build_jobs
 
 def add_builds_jobs (session, new_build_jobs_list, config_id):
-	SyncBuildJobs = {}
-	for k, v in new_build_jobs_list.items():
-		ConfigMetadata = get_configmetadata_info(session, k)
-		if not ConfigMetadata.ConfigSync:
-			add_new_build_job(session, v['ebuild_id'], k, v['use_flagsDict'])
-			# B = Build cpv use-flags config
-			ConfigInfo = get_config_info(session, config_id)
-			# FIXME log_msg need a fix to log the use flags corect.
-			log_msg = "B %s:%s USE: %s %s:%s" %  (k, v['repo'], use_flagsDict, ConfigInfo.Hostname, ConfigInfo.Config,)
-			add_zobcs_logs(session, log_msg, "info", config_id)
-		else:
-				pass
+	SyncConfigs = {}
+	for ConfigInfoAll in get_config_all_info(session):
+		ConfigMetadata = get_configmetadata_info(session, ConfigInfoAll.ConfigId)
+		if ConfigMetadata.ConfigSync:
+			try:
+				SyncConfigs[ConfigInfoAll.Config]['Syncedconfigs'] = SyncConfigs[ConfigInfoAll.Config]['Syncedconfigs'] + 1
+				SyncConfigs[ConfigInfoAll.Config]['Syncedconfigslist'].append(ConfigInfoAll.ConfigId)
+			except KeyError as e:
+				attd = {}
+				attd['Syncedconfigs'] = 1
+				attd['Next'] = 0
+				attd['id'] = ConfigInfoAll.ConfigId
+				attd['ebuild_id'] = 0
+				attd['Syncedconfigslist'] = []
+				attd['Syncedconfigslist'].append(ConfigInfoAll.ConfigId)
+				SyncConfigs[ConfigInfoAll.Config] = attd
+
+	for new_build_jobs_dict in new_build_jobs_list:
+		for k, v in new_build_jobs_dict.items():
+			ConfigMetadata = get_configmetadata_info(session, k)
+			ConfigInfo = get_config_info(session, k)
+			if not ConfigMetadata.ConfigSync:
+				add_new_build_job(session, v['ebuild_id'], k, v['use_flagsDict'])
+				# B = Build cpv use-flags config
+				# FIXME log_msg need a fix to log the use flags corect.
+				log_msg = "B %s:%s USE: %s %s:%s" % (k, v['repo'], v['use_flagsDict'], ConfigInfo.Hostname, ConfigInfo.Config,)
+				add_zobcs_logs(session, log_msg, "info", config_id)
+			else:
+				for b, l in SyncConfigs.items():
+					if k in l['Syncedconfigslist'] and l['ebuild_id'] != v['ebuild_id'] and l['id'] == k:
+						add_new_build_job(session, v['ebuild_id'], k, v['use_flagsDict'])
+						SyncConfigs[b]['ebuild_id'] = v['ebuild_id']
+						SyncConfigs[b]['id'] = SyncConfigs[b]['Syncedconfigslist'][SyncConfigs[b]['Next']]
+						if SyncConfigs[b]['Next'] == SyncConfigs[b]['Syncedconfigs'] - 1:
+							SyncConfigs[b]['Next'] = 0
+						else:
+							SyncConfigs[b]['Next'] = SyncConfigs[b]['Next'] + 1
+						# B = Build cpv use-flags config
+						# FIXME log_msg need a fix to log the use flags corect.
+						log_msg = "B %s:%s USE: %s %s:%s" % (k, v['repo'], v['use_flagsDict'], ConfigInfo.Hostname, ConfigInfo.Config,)
+						add_zobcs_logs(session, log_msg, "info", config_id)
 
 def update_cpv_db(session, config_id, zobcs_settings_dict):
 	GuestBusy = True
@@ -79,13 +110,13 @@ def update_cpv_db(session, config_id, zobcs_settings_dict):
 	for config in get_config_all_info(session):
 		if not config.Host:
 			guestid_list.append(config.ConfigId)
-	Status_list = []
-	for guest_id in guestid_list:
-		ConfigMetadata = get_configmetadata_info(session, guest_id)
-		Status_list.append(ConfigMetadata.Status)
 	while GuestBusy:
+		Status_list = []
+		for guest_id in guestid_list:
+			ConfigMetadata = get_configmetadata_info(session, guest_id)
+			Status_list.append(ConfigMetadata.Status)
 		if not 'Runing' in Status_list:
-			GuestBusy = False
+			break
 		time.sleep(30)
 
 	mysettings =  init_portage_settings(session, config_id, zobcs_settings_dict)
@@ -123,7 +154,9 @@ def update_cpv_db(session, config_id, zobcs_settings_dict):
 
 		# Run the update package for all package in the list and in a multiprocessing pool
 		for cp in sorted(package_list_tree):
-			new_build_jobs_list.append(pool.apply_async(update_cpv_db_pool, (mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id,)))
+			new_build_jobs = pool.apply_async(update_cpv_db_pool, (mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id,))
+			if not new_build_jobs is None:
+				new_build_jobs_list.append(new_build_jobs)
 			# use this when debuging
 			#update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id)
 

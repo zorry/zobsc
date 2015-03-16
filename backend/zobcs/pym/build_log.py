@@ -85,7 +85,7 @@ def get_build_dict_db(session, config_id, settings, pkg):
 				log_msg = "%s:%s:%s Dups of checksums" % (pkg.cpv, repo, ebuild_id,)
 				add_zobcs_logs(session, log_msg, "error", config_id)
 				old_ebuild_id_list.append(ebuild_id)
-			add_old_ebuild(session, , old_ebuild_id_list)
+			add_old_ebuild(session, old_ebuild_id_list)
 		return
 	build_dict['ebuild_id'] = ebuild_id_list
 

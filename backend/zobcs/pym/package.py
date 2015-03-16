@@ -34,7 +34,7 @@ class zobcs_package(object):
 		for config_id in config_list:
 			ConfigInfo = get_config_info(self._session, config_id)
 			ConfigsMetaData = get_configmetadata_info(self._session, config_id)
-			if ConfigsMetaData.Auto and ConfigsMetaData.Active and ConfigMetadata.Status == 'Stopped':
+			if ConfigsMetaData.Auto and ConfigsMetaData.Active and ConfigMetaData.Status == 'Stopped':
 				mysettings_setup = self.change_config(ConfigInfo.Hostname + "/" + ConfigInfo.Config)
 				myportdb_setup = portage.portdbapi(mysettings=mysettings_setup)
 
@@ -146,7 +146,7 @@ class zobcs_package(object):
 					if build_cpv == k:
 						attDict = {}
 						attDict['ebuild_id'] = ebuild_id
-						attDict['use_flags'] = use_flagsDict
+						attDict['use_flagsDict'] = use_flagsDict
 						attDict['build_cpv'] = build_cpv
 						attDict['repo'] = v['repo']
 						new_build_jobs_dict[config_id] = attDict
@@ -356,6 +356,8 @@ class zobcs_package(object):
 					new_ebuild_id_list.append(ebuild_id)
 			package_metadataDict = self.get_package_metadataDict(pkgdir, package_id)
 			new_build_jobs_dict = self.add_package(packageDict, package_metadataDict, package_id, new_ebuild_id_list, old_ebuild_id_list, manifest_checksum_tree)
+		else:
+			new_build_jobs_dict = None
 
 		log_msg = "C %s:%s ... Done." % (cp, repo)
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
