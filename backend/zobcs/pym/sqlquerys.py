@@ -6,6 +6,7 @@ from zobcs.db_mapping import Configs, Logs, ConfigsMetaData, Jobs, BuildJobs, Pa
 	BuildJobsEmergeOptions, EbuildsMetadata, EbuildsIUse, Restrictions, EbuildsRestrictions, EbuildsKeywords, \
         Keywords, PackagesMetadata, Emails, PackagesEmails
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from sqlalchemy import and_, or_
 
 # Guest Functions
 def get_config_id(session, config, host):
@@ -485,7 +486,7 @@ def get_ebuild_id_db(session, checksum, package_id):
 
 def check_host_updatedb(session):
 	try:
-		JobsInfo = session.query(Jobs).filter_by(Status = 'Done').filter_by(JobType = 'updatedb').one()
+		JobsInfo = session.query(Jobs).filter_by(Status = 'Done').filter_by(JobType = 'updatedb').filter_by(JobType = 'esync').one()
 	except NoResultFound as e:
 		return True
 	return False

@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-#from zobcs.sync import git_pull, sync_tree
+from zobcs.sync import sync_tree
 #from zobcs.buildquerydb import add_buildquery_main, del_buildquery_main
 from zobcs.updatedb import update_db_main
 from zobcs.sqlquerys import get_config_id, add_zobcs_logs, get_jobs, update_job_list
@@ -59,7 +59,7 @@ def jobs_main(session, config_id):
 			update_job_list(session, "Runing", job_id)
 			log_msg = "Job %s is runing." % (job_id,)
 			add_zobcs_logs(session, log_msg, "info", config_id)
-			#result =  sync_tree(session)
+			result =  sync_tree(session)
 			if result:
 				update_job_list(session, "Done", job_id)
 				log_msg = "Job %s is done.." % (job_id,)
