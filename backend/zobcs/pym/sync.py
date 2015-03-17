@@ -35,7 +35,11 @@ def sync_tree(session):
 		if not 'Runing' in Status_list:
 			GuestBusy = False
 		time.sleep(30)
-
+	try:
+		os.remove(mysettings['PORTDIR'] + "/profiles/config/parent")
+		os.remove(mysettings['PORTDIR'] + "/profiles/config")
+	except:
+		pass
 	tmpcmdline = []
 	tmpcmdline.append("--sync")
 	tmpcmdline.append("--quiet")
