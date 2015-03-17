@@ -6,14 +6,12 @@ import sys
 
 from _emerge.main import emerge_main
 from zobcs.readconf import get_conf_settings
-from zobcs.sqlquerys import get_config_id, add_zobcs_logs, get_default_config, get_config_all_info
+from zobcs.sqlquerys import get_config_id, add_zobcs_logs, get_config_all_info
 from zobcs.updatedb import update_db_main
-# Get the options from the config file set in zobcs.readconf
-from zobcs.readconf import get_conf_settings
+from zobcs.readconf import read_config_settings
 
 def sync_tree(session):
-	reader = get_conf_settings()
-	zobcs_settings_dict = reader.read_zobcs_settings_all()
+	zobcs_settings_dict = read_config_settings()
 	_hostname = zobcs_settings_dict['hostname']
 	_config = zobcs_settings_dict['zobcs_config']
 	config_id = get_config_id(session, _config, _hostname)
@@ -37,7 +35,7 @@ def sync_tree(session):
 		time.sleep(30)
 	try:
 		os.remove(mysettings['PORTDIR'] + "/profiles/config/parent")
-		os.remove(mysettings['PORTDIR'] + "/profiles/config")
+		os.rmdir(mysettings['PORTDIR'] + "/profiles/config")
 	except:
 		pass
 	tmpcmdline = []

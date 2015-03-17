@@ -49,3 +49,7 @@ class get_conf_settings(object):
 		zobcs_settings_dict['hostname'] = getfqdn()
 		# zobcs_settings_dict['zobcs_logfile'] = get_zobcs_logfile.rstrip('\n')
 		return zobcs_settings_dict
+
+def read_config_settings()
+	reader = get_conf_settings()
+	return reader.read_zobcs_settings_all()
