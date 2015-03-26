@@ -33,12 +33,12 @@ def main():
 			continue
 		else:
 			status = 'Runing'
-			update_deamon_status(session, status, config_id):
+			update_deamon_status(session, status, config_id)
 			init_build_job.procces_build_jobs()
 			time.sleep(10)
 			repeat = True
 			status = 'Waiting'
-			update_deamon_status(session, status, config_id):
+			update_deamon_status(session, status, config_id)
 	conn.close
 
 if __name__ == "__main__":
