@@ -99,7 +99,7 @@ def get_build_dict_db(session, config_id, settings, pkg):
 def search_buildlog(session, logfile_text_dict, max_text_lines):
 	log_search_list = get_hilight_info(session)
 	hilight_list = []
-	for index, text_line in logfile_tex_dict.items():
+	for index, text_line in logfile_text_dict.items():
 		for search_pattern in log_search_list:
 			if re.search(search_pattern.HiLightSearch, textline):
 				hilight_tmp = {}
