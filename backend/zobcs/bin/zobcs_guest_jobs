@@ -2,7 +2,7 @@
 from __future__ import print_function
 from zobcs.readconf import get_conf_settings
 from zobcs.ConnectionManager import NewConnection
-from zobcs.sqlquerys import add_zobcs_logs, get_config_id
+from zobcs.sqlquerys import add_zobcs_logs, get_config_id, check_host_updatedb, update_deamon_status
 from zobcs.check_setup import check_configure_guest
 from zobcs.build_job import build_job_action
 from zobcs.jobs import jobs_main
@@ -11,7 +11,6 @@ import portage
 import sys
 import os
 import time
-from multiprocessing import Process
 
 def main():
 	repeat = True
@@ -26,16 +25,20 @@ def main():
 	init_build_job = build_job_action(config_id, session)
 	while repeat:
 		jobs_main(session, config)
-		if check_configure_guest(session, config_id) is not True:
+		if not check_configure_guest(session, config_id):
 			time.sleep(10)
 			continue
-		else:
-			init_build_job.procces_build_jobs()
-			#p = Process(target=init_build_job.procces_build_jobs,)
-			#p.start()
-			#p.join()
+		elif not check_host_updatedb(session):
 			time.sleep(30)
+			continue
+		else:
+			status = 'Runing'
+			update_deamon_status(session, status, config_id):
+			init_build_job.procces_build_jobs()
+			time.sleep(10)
 			repeat = True
+			status = 'Waiting'
+			update_deamon_status(session, status, config_id):
 	conn.close
 
 if __name__ == "__main__":
