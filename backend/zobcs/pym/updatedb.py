@@ -163,9 +163,9 @@ def update_cpv_db(session, config_id, zobcs_settings_dict):
 	#close and join the multiprocessing pools
 	pool.close()
 	pool.join()
-	
-	add_builds_jobs (session, new_build_jobs_list)
-	
+	if new_build_jobs_list != []:
+		add_builds_jobs (session, new_build_jobs_list, config_id)
+
 	log_msg = "Checking categories, package and ebuilds ... done"
 	add_zobcs_logs(session, log_msg, "info", config_id)
 

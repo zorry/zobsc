@@ -34,7 +34,7 @@ class zobcs_package(object):
 		for config_id in config_list:
 			ConfigInfo = get_config_info(self._session, config_id)
 			ConfigsMetaData = get_configmetadata_info(self._session, config_id)
-			if ConfigsMetaData.Auto and ConfigsMetaData.Active and ConfigMetaData.Status == 'Stopped':
+			if ConfigsMetaData.Auto and ConfigsMetaData.Active and ConfigsMetaData.Status != 'Stopped':
 				mysettings_setup = self.change_config(ConfigInfo.Hostname + "/" + ConfigInfo.Config)
 				myportdb_setup = portage.portdbapi(mysettings=mysettings_setup)
 
