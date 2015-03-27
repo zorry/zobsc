@@ -25,18 +25,14 @@ def main():
 	init_build_job = build_job_action(config_id, session)
 	while repeat:
 		jobs_main(session, config)
-		if not check_configure_guest(session, config_id):
-			time.sleep(10)
-			continue
-		elif not check_host_updatedb(session):
+		if not check_configure_guest(session, config_id) or check_host_updatedb(session):
 			time.sleep(30)
 			continue
 		else:
 			status = 'Runing'
 			update_deamon_status(session, status, config_id)
 			init_build_job.procces_build_jobs()
-			time.sleep(10)
-			repeat = True
+			time.sleep(5)
 			status = 'Waiting'
 			update_deamon_status(session, status, config_id)
 	conn.close
