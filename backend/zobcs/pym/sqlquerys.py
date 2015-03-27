@@ -486,7 +486,7 @@ def get_ebuild_id_db(session, checksum, package_id):
 
 def check_host_updatedb(session):
 	try:
-		JobsInfo = session.query(Jobs).filter_by(Status = 'Done').filter_by(JobType = 'updatedb').filter_by(JobType = 'esync').one()
+		JobsInfo = session.query(Jobs).filter_by(Status = 'Done').filter_by(JobType = 'esync').one()
 	except NoResultFound as e:
 		return True
 	return False
