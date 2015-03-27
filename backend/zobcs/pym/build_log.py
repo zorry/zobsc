@@ -101,7 +101,7 @@ def search_buildlog(session, logfile_text_dict, max_text_lines):
 	hilight_list = []
 	for index, text_line in logfile_text_dict.items():
 		for search_pattern in log_search_list:
-			if re.search(search_pattern.HiLightSearch, textline):
+			if re.search(search_pattern.HiLightSearch, text_line):
 				hilight_tmp = {}
 				hilight_tmp['startline'] = index - search_pattern.HiLightStart
 				hilight_tmp['hilight'] = search_pattern.HiLightCssId
@@ -181,8 +181,8 @@ def search_buildlog(session, logfile_text_dict, max_text_lines):
 def get_buildlog_info(session, settings, pkg, build_dict):
 	myportdb = portage.portdbapi(mysettings=settings)
 	init_repoman = zobcs_repoman(settings, myportdb)
-	logfile_text_dict_dict, max_text_lines = get_log_text_dict(settings.get("PORTAGE_LOG_FILE"))
-	hilight_dict = search_buildlog(session, logfile_text_dict_dict, max_text_lines)
+	logfile_text_dict, max_text_lines = get_log_text_dict(settings.get("PORTAGE_LOG_FILE"))
+	hilight_dict = search_buildlog(session, logfile_text_dict, max_text_lines)
 	error_log_list = []
 	qa_error_list = []
 	repoman_error_list = []
