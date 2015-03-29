@@ -1,3 +1,6 @@
+# Copyright 1998-2015 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
 import datetime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum, Text, ForeignKey

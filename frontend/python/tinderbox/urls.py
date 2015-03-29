@@ -1,11 +1,9 @@
+# Copyright 1998-2015 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
 from django.conf.urls import patterns, include, url
 
-# Uncomment the next two lines to enable the admin:
-# from django.contrib import admin
-# admin.autodiscover()
-
 urlpatterns = patterns('f_zobcs.views',
-    # Examples:
     url(r'^/$', 'views_main'),
     url(r'^categories/$', 'views_categories'),
     url(r'^packages/(?P<category_id>\d+)/$', 'views_packages'),

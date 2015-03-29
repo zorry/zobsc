@@ -1,3 +1,6 @@
+# Copyright 1998-2015 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
 from __future__ import print_function
 from _emerge.create_depgraph_params import create_depgraph_params
 from _emerge.depgraph import backtrack_depgraph

@@ -1,3 +1,6 @@
+# Copyright 1998-2015 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
 from __future__ import print_function
 import datetime
 from zobcs.db_mapping import Configs, Logs, ConfigsMetaData, Jobs, BuildJobs, Packages, Ebuilds, Repos, Categories, \

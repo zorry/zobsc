@@ -1,9 +1,17 @@
 2014-10-01  Magnus Granberg  <zorry@gentoo.org>
 
-	We copy action.py from portage and patch it.
-	Use the patched Scheduler and add build_dict so it can be uset.
+	* backend/zobcs/pym/actions.py
+	Use the patched Scheduler and add build_dict so it can be ust.
 	We use or own mydepgraph (build_mydepgraph) that call backtrack_depgraph.
+	Return the output_buffer for emerge info.
 	And pass unresolvable in action_depclean so we can use it later.
+	* backend/zobcs/pym/main.py
+	Use or own patched actions.
+	We pass build_dict to some functions.
+	* backend/zobcs/pym/Scheduler.py
+	We copy Scheduler.py from portage and patch it.
+	Fix so we can use add_buildlog_main()
+	We use add_buildlog_main() for loging.
 
 --- a/backend/zobcs/pym/actions.py	2013-03-22 17:57:23.000000000 +0100
 +++ b/backend/zobcs/pym/actions.py	2013-03-22 19:00:43.265582143 +0100
@@ -140,6 +148,20 @@
  
  def action_deselect(settings, trees, opts, atoms):
  	enter_invalid = '--ask-enter-invalid' in opts
+@@ -1692,11 +1692,8 @@ def action_info(settings, trees, myopts,
+ 			unset_vars.append(k)
+ 	if unset_vars:
+ 		append("Unset:  "+", ".join(unset_vars))
+-	append("")
+-	append("")
+-	writemsg_stdout("\n".join(output_buffer),
+-		noiselevel=-1)
+-	del output_buffer[:]
++
++	return False, output_buffer
+ 
+ 	# If some packages were found...
+ 	if mypkgs:
 @@ -3607,7 +3607,7 @@ def repo_name_duplicate_check(trees):
  
  	return bool(ignored_repos)
@@ -158,3 +180,108 @@
  		post_emerge(emerge_config.action, emerge_config.opts,
  			emerge_config.args, emerge_config.target_config.root,
  			emerge_config.trees, emerge_config.target_config.mtimedb, retval)
+--- a/backend/zobcs/pym/main.py	2013-03-22 17:57:23.000000000 +0100
++++ b/backend/zobcs/pym/main.py	2012-12-06 03:32:56.104889716 +0100
+@@ -11,7 +11,7 @@ portage.proxy.lazyimport.lazyimport(glob
+ 	'logging',
+ 	'portage.util:writemsg_level',
+ 	'textwrap',
+-	'_emerge.actions:load_emerge_config,run_action,' + \
++	'zobcs.actions:load_emerge_config,run_action,' + \
+ 		'validate_ebuild_environment',
+ 	'_emerge.help:help@emerge_help',
+ )
+@@ -968,15 +968,20 @@ def profile_check(trees, myaction):
+ 		return 1
+ 	return os.EX_OK
+ 
+-def emerge_main(args=None):
++def emerge_main(args=None, build_dict=None, session=None):
+ 	"""
+ 	@param args: command arguments (default: sys.argv[1:])
+ 	@type args: list
++	@param build_dict: info of the build_job
++	@type build_dict: dict
+ 	"""
+ 	if args is None:
+ 		args = sys.argv[1:]
+ 
+ 	args = portage._decode_argv(args)
++	
++	if build_dict is None:
++		build_dict = {}
+ 
+ 	# Disable color until we're sure that it should be enabled (after
+ 	# EMERGE_DEFAULT_OPTS has been parsed).
+@@ -1028,7 +1028,7 @@ def emerge_main(args=None):
+ 		parse_opts(tmpcmdline)
+ 
+ 	try:
+-		return run_action(emerge_config)
++		return run_action(emerge_config, build_dict, session)
+ 	finally:
+ 		# Call destructors for our portdbapi instances.
+ 		for x in emerge_config.trees.values():
+--- a/backend/zobcs/pym/Scheduler.py	2013-03-22 17:57:23.000000000 +0100
++++ b/backend/zobcs/pym/Scheduler.py	2012-12-21 02:09:28.082301168 +0100
+@@ -62,6 +62,8 @@ from _emerge.PackageMerge import Package
+ from _emerge.PollScheduler import PollScheduler
+ from _emerge.SequentialTaskQueue import SequentialTaskQueue
+ 
++from zobcs.build_log import add_buildlog_main
++
+ if sys.hexversion >= 0x3000000:
+ 	basestring = str
+ 
+@@ -1254,8 +1251,9 @@ class Scheduler(PollScheduler):
+ 
+ 	def _do_merge_exit(self, merge):
+ 		pkg = merge.merge.pkg
++		settings = merge.merge.settings
++		trees = self.trees
+ 		if merge.returncode != os.EX_OK:
+-			settings = merge.merge.settings
+ 			build_dir = settings.get("PORTAGE_BUILDDIR")
+ 			build_log = settings.get("PORTAGE_LOG_FILE")
+ 
+@@ -1266,6 +1264,7 @@ class Scheduler(PollScheduler):
+ 			if not self._terminated_tasks:
+ 				self._failed_pkg_msg(self._failed_pkgs[-1], "install", "to")
+ 				self._status_display.failed = len(self._failed_pkgs)
++			add_buildlog_main(settings, pkg, trees)
+ 			return
+ 
+ 		self._task_complete(pkg)
+@@ -1284,6 +1283,7 @@ class Scheduler(PollScheduler):
+ 				self._pkg_cache.pop(pkg_to_replace, None)
+ 
+ 		if pkg.installed:
++			add_buildlog_main(settings, pkg, trees)
+ 			return
+ 
+ 		# Call mtimedb.commit() after each merge so that
+@@ -1294,6 +1294,7 @@ class Scheduler(PollScheduler):
+ 		if not mtimedb["resume"]["mergelist"]:
+ 			del mtimedb["resume"]
+ 		mtimedb.commit()
++		add_buildlog_main(settings, pkg, trees)
+ 
+ 	def _build_exit(self, build):
+ 		self._running_tasks.pop(id(build), None)
+@@ -1318,6 +1319,8 @@ class Scheduler(PollScheduler):
+ 				self._status_display.merges = len(self._task_queues.merge)
+ 		else:
+ 			settings = build.settings
++			trees = self.trees
++			pkg = build.pkg
+ 			build_dir = settings.get("PORTAGE_BUILDDIR")
+ 			build_log = settings.get("PORTAGE_LOG_FILE")
+ 
+@@ -1329,6 +1332,7 @@ class Scheduler(PollScheduler):
+ 				self._failed_pkg_msg(self._failed_pkgs[-1], "emerge", "for")
+ 				self._status_display.failed = len(self._failed_pkgs)
+ 			self._deallocate_config(build.settings)
++			add_buildlog_main(settings, pkg, trees)
+ 		self._jobs -= 1
+ 		self._status_display.running = self._jobs
+ 		self._schedule()

@@ -1,7 +1,6 @@
+# Copyright 1998-2015 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-""" 	This code will update the sql backend with needed info for
-	the Frontend and the Guest deamons. """
 from __future__ import print_function
 import sys
 import os

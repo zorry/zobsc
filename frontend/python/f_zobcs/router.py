@@ -1,3 +1,6 @@
+# Copyright 1998-2015 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
 class ZobcsRouter(object):
 	def db_for_read(self, model, **hints):
 		"Point all operations on zobcs models to 'zobcs'"

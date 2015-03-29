@@ -1,3 +1,9 @@
+#!/usr/bin/python
+#
+# Copyright 1998-2015 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
+# Origin flags.py from portage public api repo
 from __future__ import print_function
 from _emerge.main import parse_opts
 from _emerge.depgraph import backtrack_depgraph, depgraph, resume_depgraph

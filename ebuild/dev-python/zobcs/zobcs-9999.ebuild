@@ -4,7 +4,6 @@
 
 EAPI="5"
 PYTHON_COMPAT=( python{2_7,3_3,3_4})
-#SUPPORT_PYTHON_ABIS="1"
 
 inherit distutils-r1 git-2
 
@@ -25,18 +24,13 @@ DEPEND="${RDEPEND}
 
 EGIT_REPO_URI="https://github.com/zorry/zobsc.git"
 
-PYTHON_MODNAME="zobcs"
-
 python_prepare_all() {
 	einfo "Copying needed files from portage"
 	cp /usr/lib64/python2.7/site-packages/_emerge/actions.py ${S}/backend/zobcs/pym
 	cp /usr/lib64/python2.7/site-packages/_emerge/main.py ${S}/backend/zobcs/pym
 	cp /usr/lib64/python2.7/site-packages/_emerge/Scheduler.py ${S}/backend/zobcs/pym
 	einfo "Done."
-	epatch "${FILESDIR}/zobcs_portage_actions.patch"
-	epatch "${FILESDIR}/zobcs_portage_main.patch"
-	epatch "${FILESDIR}/zobcs_portage_Scheduler.patch"
-	epatch "${FILESDIR}/zobcs_portage_info.patch"
+	epatch "${FILESDIR}/portage.patch"
 	distutils-r1_python_prepare_all
 }
 

@@ -1,3 +1,6 @@
+# Copyright 1998-2015 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
 from f_zobcs.models import Configs, BuildJobsUse, BuildJobs
 from f_zobcs.utils.builduseflags import config_get_use
 from django.forms import ModelForm

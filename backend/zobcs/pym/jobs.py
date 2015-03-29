@@ -1,5 +1,7 @@
-from __future__ import print_function
+# Copyright 1998-2015 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
 
+from __future__ import print_function
 from zobcs.sync import sync_tree
 #from zobcs.buildquerydb import add_buildquery_main, del_buildquery_main
 from zobcs.updatedb import update_db_main

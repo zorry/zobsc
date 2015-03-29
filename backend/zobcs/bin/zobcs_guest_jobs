@@ -1,4 +1,8 @@
 #!/usr/bin/python
+#
+# Copyright 1998-2015 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
 from __future__ import print_function
 from zobcs.readconf import get_conf_settings
 from zobcs.ConnectionManager import NewConnection

@@ -1,3 +1,6 @@
+# Copyright 1998-2015 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
 from f_zobcs.models import *
 from django.shortcuts import get_object_or_404
 from zobcs.utils.flags import zobcs_use_flags
