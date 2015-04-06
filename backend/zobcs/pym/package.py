@@ -12,7 +12,7 @@ from zobcs.sqlquerys import add_zobcs_logs, get_package_info, get_config_info, \
 	add_new_build_job, add_new_ebuild_sql, get_ebuild_id_list, add_old_ebuild, \
 	get_package_metadata_sql, update_package_metadata, update_manifest_sql, \
 	get_package_info_from_package_id, get_config_all_info, add_new_package_sql, \
-	get_ebuild_checksums, get_ebuild_id_db, get_configmetadata_info
+	get_ebuild_checksums, get_ebuild_id_db, get_configmetadata_info, get_setup_info
 from zobcs.readconf import get_conf_settings
 
 class zobcs_package(object):
@@ -38,7 +38,8 @@ class zobcs_package(object):
 			ConfigInfo = get_config_info(self._session, config_id)
 			ConfigsMetaData = get_configmetadata_info(self._session, config_id)
 			if ConfigsMetaData.Auto and ConfigsMetaData.Active and ConfigsMetaData.Status != 'Stopped':
-				mysettings_setup = self.change_config(ConfigInfo.Hostname + "/" + ConfigInfo.Config)
+				SetupInfo = get_setup_info(session, config_id)
+				mysettings_setup = self.change_config(ConfigInfo.Hostname + "/" + SetupInfo.Setup)
 				myportdb_setup = portage.portdbapi(mysettings=mysettings_setup)
 
 				# Get the latest cpv from portage with the config that we can build

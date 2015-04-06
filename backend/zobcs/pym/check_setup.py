@@ -17,7 +17,7 @@ def check_make_conf(session, config_id, zobcs_settings_dict):
 	for ConfigInfo in get_config_all_info(session):
 		attDict={}
 		# Set the config dir
-		SetupInfo = get_setup_info(session, ConfigInfo.ConfigId):
+		SetupInfo = get_setup_info(session, ConfigInfo.ConfigId)
 		check_config_dir = "/var/cache/zobcs/" + zobcs_settings_dict['zobcs_gitreponame'] + "/" + ConfigInfo.Hostname +"/" + SetupInfo.Setup + "/"
 		make_conf_file = check_config_dir + "etc/portage/make.conf"
 		ConfigsMetaDataInfo = get_configmetadata_info(session, ConfigInfo.ConfigId)
