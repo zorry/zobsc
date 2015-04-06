@@ -18,7 +18,7 @@ from portage.dep import check_required_use
 from zobcs.main import emerge_main
 from zobcs.build_log import log_fail_queru
 from zobcs.actions import load_emerge_config
-from zobcs.sqlquerys import add_zobcs_logs, get_packages_to_build, update_buildjobs_status
+from zobcs.sqlquerys import add_zobcs_logs, get_packages_to_build, update_buildjobs_status, is_build_job_done
 
 class build_job_action(object):
 
@@ -129,17 +129,14 @@ class build_job_action(object):
 		except:
 			pass
 
-		build_dict2 = {}
-		build_dict2 = get_packages_to_build(self._session, self._config_id)
-		if not build_dict2 is None:
-			if build_dict['build_job_id'] == build_dict2['build_job_id']:
-				log_msg = "build_job %s was not removed" % (build_dict['build_job_id'],)
-				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-				print("qurery was not removed")
-				build_dict['type_fail'] = "Querey was not removed"
-				build_dict['check_fail'] = True
-				update_buildjobs_status(session, build_dict['build_job_id'], 'Waiting', self._config_id)
-				log_fail_queru(self._session, build_dict, settings)
+		if is_build_job_done(session, build_dict['build_job_id']):
+			update_buildjobs_status(session, build_dict['build_job_id'], 'Looked', self._config_id)
+			log_msg = "build_job %s was not removed" % (build_dict['build_job_id'],)
+			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+			print("qurery was not removed")
+			build_dict['type_fail'] = "Querey was not removed"
+			build_dict['check_fail'] = True
+			log_fail_queru(self._session, build_dict, settings)
 		if build_fail is True:
 			build_dict['type_fail'] = "Emerge faild"
 			build_dict['check_fail'] = True

@@ -58,6 +58,13 @@ def update_buildjobs_status(session, build_job_id, status, config_id):
 def get_configmetadata_info(session, config_id):
 	return session.query(ConfigsMetaData).filter_by(ConfigId = config_id).one()
 
+def is_build_job_done(session, build_job_id):
+	try:
+		BuildJobsInfo = session.query(BuildJobs).filter_by(BuildJobId = build_job_id).one()
+	except NoResultFound as e:
+		return False
+	return True
+
 def get_packages_to_build(session, config_id):
 	SetupInfo = get_setup_info(session, config_id)
 	BuildJobsTmp = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.Setup). \

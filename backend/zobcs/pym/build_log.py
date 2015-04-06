@@ -28,7 +28,8 @@ from zobcs.flags import zobcs_use_flags
 from zobcs.ConnectionManager import NewConnection
 from zobcs.sqlquerys import add_zobcs_logs, get_config_id, get_ebuild_id_db, add_new_buildlog, \
 	get_package_info, get_build_job_id, get_use_id, get_config_info, get_hilight_info, get_error_info_list, \
-	add_e_info, get_fail_times, add_fail_times, update_fail_times, del_old_build_jobs, add_old_ebuild
+	add_e_info, get_fail_times, add_fail_times, update_fail_times, del_old_build_jobs, add_old_ebuild, \
+	update_buildjobs_status
 from sqlalchemy.orm import sessionmaker
 
 def get_build_dict_db(session, config_id, settings, pkg):
@@ -287,10 +288,12 @@ def log_fail_queru(session, build_dict, settings):
 		fail_querue_dict['fail_type'] = build_dict['type_fail']
 		fail_querue_dict['fail_times'] = 1
 		add_fail_times(session, fail_querue_dict)
+		update_buildjobs_status(session, build_dict['build_job_id'], 'Waiting', config_id)
 	else:
 		if NewBuildJobsRedo.FailTimes < 3:
 			NewBuildJobsRedo.FailTimes = NewBuildJobsRedo.FailTimes + 1
 			update_fail_times(session, NewBuildJobsRedo)
+			update_buildjobs_status(session, build_dict['build_job_id'], 'Waiting', config_id)
 			return
 		else:
 			build_log_dict = {}
