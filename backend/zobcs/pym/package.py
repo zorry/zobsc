@@ -45,7 +45,7 @@ class zobcs_package(object):
 				build_cpv = myportdb_setup.xmatch('bestmatch-visible', cp)
 
 				# Check if could get cpv from portage and add it to the config_cpv_listDict.
-				if build_cpv != "":
+				if build_cpv != "" and not ConfigInfo.SetupId in config_cpv_listDict:
 
 					# Get the iuse and use flags for that config/setup and cpv
 					init_useflags = zobcs_use_flags(mysettings_setup, myportdb_setup, build_cpv)
@@ -59,7 +59,7 @@ class zobcs_package(object):
 					attDict['cpv'] = build_cpv
 					attDict['useflags'] = final_use_list
 					attDict['iuse'] = iuse_flags_list2
-					config_cpv_listDict[config_id] = attDict
+					config_cpv_listDict[ConfigInfo.SetupId] = attDict
 
 				# Clean some cache
 				myportdb_setup.close_caches()
@@ -125,11 +125,9 @@ class zobcs_package(object):
 	def add_new_build_job_db(self, ebuild_id_list, packageDict, config_cpv_listDict):
 		# Get the needed info from packageDict and config_cpv_listDict and put that in buildqueue
 		# Only add it if ebuild_version in packageDict and config_cpv_listDict match
-		new_build_jobs_dict = {}
 		if config_cpv_listDict is not None:
 			# Unpack config_cpv_listDict
-			for k, v in config_cpv_listDict.items():
-				config_id = k
+			for setup_id, v in config_cpv_listDict.items():
 				build_cpv = v['cpv']
 				iuse_flags_list = list(set(v['iuse']))
 				use_enable= v['useflags']
@@ -147,17 +145,12 @@ class zobcs_package(object):
 
 					# Comper and add the cpv to buildqueue
 					if build_cpv == k:
-						attDict = {}
-						attDict['ebuild_id'] = ebuild_id
-						attDict['use_flagsDict'] = use_flagsDict
-						attDict['build_cpv'] = build_cpv
-						attDict['repo'] = v['repo']
-						new_build_jobs_dict[config_id] = attDict
+						add_new_build_job(session, v['ebuild_id'], setup_id, v['use_flagsDict'], self._config_id)
+						# B = Build cpv use-flags config
+						# FIXME log_msg need a fix to log the use flags corect.
+						log_msg = "B %s:%s USE: %s Setup: %s" % (k, v['repo'], v['use_flagsDict'], setup_id,)
+						add_zobcs_logs(session, log_msg, "info", self._config_id)
 					i = i +1
-		if new_build_jobs_dict == {}:
-			return None
-		else:
-			return new_build_jobs_dict
 
 	def get_package_metadataDict(self, pkgdir, package_id):
 		# Make package_metadataDict
@@ -223,8 +216,7 @@ class zobcs_package(object):
 		config_cpv_listDict = self.config_match_ebuild(cp, config_list)
 
 		# Add the ebuild to the build jobs table if needed
-		new_build_jobs_dict = self.add_new_build_job_db(ebuild_id_list, packageDict, config_cpv_listDict)
-		return new_build_jobs_dict
+		self.add_new_build_job_db(ebuild_id_list, packageDict, config_cpv_listDict)
 
 	def add_new_package_db(self, cp, repo):
 		# Add new categories package ebuild to tables package and ebuilds
@@ -268,10 +260,9 @@ class zobcs_package(object):
 		for cpv in sorted(ebuild_list_tree):
 			packageDict[cpv] = self.get_packageDict(pkgdir, cpv, repo)
 
-		new_build_jobs_dict = self.add_package(packageDict, package_metadataDict, package_id, new_ebuild_id_list, old_ebuild_id_list, manifest_checksum_tree)
+		self.add_package(packageDict, package_metadataDict, package_id, new_ebuild_id_list, old_ebuild_id_list, manifest_checksum_tree)
 		log_msg = "C %s:%s ... Done." % (cp, repo)
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-		return new_build_jobs_dict
 
 	def update_package_db(self, package_id):
 		# Update the categories and package with new info

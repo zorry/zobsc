@@ -18,7 +18,7 @@ from portage.dep import check_required_use
 from zobcs.main import emerge_main
 from zobcs.build_log import log_fail_queru
 from zobcs.actions import load_emerge_config
-from zobcs.sqlquerys import add_zobcs_logs, get_packages_to_build
+from zobcs.sqlquerys import add_zobcs_logs, get_packages_to_build, update_buildjobs_status
 
 class build_job_action(object):
 
@@ -60,6 +60,7 @@ class build_job_action(object):
 			build_dict['check_fail'] = True
 		if build_dict['check_fail'] is True:
 				log_fail_queru(self._session, build_dict, settings)
+				update_buildjobs_status(session, build_dict['build_job_id'], 'Waiting', self._config_id)
 				return None
 		return build_cpv_dict
 
@@ -116,6 +117,7 @@ class build_job_action(object):
 		
 		# Call main_emerge to build the package in build_cpv_list
 		print("Build: %s" % build_dict)
+		update_buildjobs_status(session, build_dict['build_job_id'], 'Builing', self._config_id)
 		build_fail = emerge_main(argscmd, build_dict, self._session)
 		# Run depclean
 		if  '--depclean' in build_dict['emerge_options'] and not '--nodepclean' in build_dict['emerge_options']:
@@ -136,6 +138,7 @@ class build_job_action(object):
 				print("qurery was not removed")
 				build_dict['type_fail'] = "Querey was not removed"
 				build_dict['check_fail'] = True
+				update_buildjobs_status(session, build_dict['build_job_id'], 'Waiting', self._config_id)
 				log_fail_queru(self._session, build_dict, settings)
 		if build_fail is True:
 			build_dict['type_fail'] = "Emerge faild"

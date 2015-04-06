@@ -7,7 +7,7 @@ from zobcs.db_mapping import Configs, Logs, ConfigsMetaData, Jobs, BuildJobs, Pa
 	Uses, ConfigsEmergeOptions, EmergeOptions, HiLight, BuildLogs, BuildLogsConfig, BuildJobsUse, BuildJobsRedo, \
 	HiLightCss, BuildLogsHiLight, BuildLogsEmergeOptions, BuildLogsErrors, ErrorsInfo, EmergeInfo, BuildLogsUse, \
 	BuildJobsEmergeOptions, EbuildsMetadata, EbuildsIUse, Restrictions, EbuildsRestrictions, EbuildsKeywords, \
-        Keywords, PackagesMetadata, Emails, PackagesEmails
+        Keywords, PackagesMetadata, Emails, PackagesEmails, Setups
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy import and_, or_
 
@@ -44,25 +44,34 @@ def get_config_info(session, config_id):
 	ConfigInfo = session.query(Configs).filter_by(ConfigId = config_id).one()
 	return ConfigInfo
 
+def get_setup_info(session, config_id):
+	ConfigInfo = get_config_info(session, config_id)
+	SetupInfo = session.query(Setups).filter_by(SetupId = ConfigInfo.SetupId).one()
+	return SetupInfo
+
+def update_buildjobs_status(session, build_job_id, status, config_id):
+	BuildJobsInfo = session.query(BuildJobs).filter_by(BuildJobId = build_job_id)
+	BuildJobsInfo.Status = status
+	BuildJobsInfo.ConfigId = config_id
+	session.commit()
+
 def get_configmetadata_info(session, config_id):
 	return session.query(ConfigsMetaData).filter_by(ConfigId = config_id).one()
 
 def get_packages_to_build(session, config_id):
-	BuildJobsTmp = session.query(BuildJobs).filter(BuildJobs.ConfigId==config_id). \
+	SetupInfo = get_setup_info(session, config_id)
+	BuildJobsTmp = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.Setup). \
 				order_by(BuildJobs.BuildJobId)
-	CurrentTime = datetime.datetime.utcnow()
-	Time30Min = CurrentTime + datetime.timedelta(minutes=1)
-	if session.query(BuildJobs).filter_by(ConfigId = config_id).filter(BuildJobs.BuildNow==True).all() == [] and session.query(BuildJobs).filter_by(ConfigId = config_id).all() == []:
+	if session.query(BuildJobs).filter_by(SetupId = SetupInfo.Setup).filter(BuildJobs.BuildNow==True).filter_by(BuildJobs.Status == 'Waiting').all() == [] and session.query(BuildJobs).filter_by(SetupId = SetupInfo.Setup).filter_by(BuildJobs.Status == 'Waiting').all() == []:
 		return None
 	if BuildJobsTmp.filter(BuildJobs.BuildNow==True).first() != []:
-		BuildJobsInfo, EbuildsInfo = session.query(BuildJobs, Ebuilds).filter(BuildJobs.ConfigId == config_id). \
-			filter(BuildJobs.EbuildId == Ebuilds.EbuildId).order_by(BuildJobs.BuildJobId).first()
+		BuildJobsInfo, EbuildsInfo = session.query(BuildJobs, Ebuilds).filter(BuildJobs.SetupId == SetupInfo.Setup).filter(BuildJobs.BuildNow==True). \
+			filter(BuildJobs.EbuildId == Ebuilds.EbuildId).filter_by(BuildJobs.Status == 'Waiting').order_by(BuildJobs.BuildJobId).first()
 	else:
-		if BuildJobsTmp.filter(BuildJobs.TimeStamp < Time30Min).first() != []:
-			BuildJobsInfo, EbuildsInfo = session.query(BuildJobs, Ebuilds).filter(BuildJobs.ConfigId==config_id). \
-				filter(BuildJobs.EbuildId==Ebuilds.EbuildId).order_by(BuildJobs.BuildJobId).first()
-		else:
-			return None
+		BuildJobsInfo, EbuildsInfo = session.query(BuildJobs, Ebuilds).filter(BuildJobs.SetupId==SetupInfo.Setup). \
+			filter(BuildJobs.EbuildId==Ebuilds.EbuildId).filter_by(BuildJobs.Status == 'Waiting').order_by(BuildJobs.BuildJobId).first()
+
+	update_buildjobs_status(session, BuildJobsInfo.BuildJobId, 'Looked', config_id)
 	PackagesInfo, CategoriesInfo = session.query(Packages, Categories).filter(Packages.PackageId==EbuildsInfo.PackageId).filter(Packages.CategoryId==Categories.CategoryId).one()
 	ReposInfo = session.query(Repos).filter_by(RepoId = PackagesInfo.RepoId).one()
 	uses={}
@@ -76,7 +85,8 @@ def get_packages_to_build(session, config_id):
 			filter(ConfigsEmergeOptions.EOptionId==EmergeOptions.EmergeOptionId).all():
 		emerge_options_list.append(EmergeOptionsInfo.EOption)
 	build_dict={}
-	build_dict['config_id'] = BuildJobsInfo.ConfigId
+	build_dict['config_id'] = config_id
+	build_dict['setup_id'] = BuildJobsIdInfo.SetupId
 	build_dict['build_job_id'] = BuildJobsInfo.BuildJobId
 	build_dict['ebuild_id']= EbuildsInfo.EbuildId
 	build_dict['package_id'] = EbuildsInfo.PackageId
@@ -446,8 +456,8 @@ def get_package_info_from_package_id(session, package_id):
 	RepoInfo = session.query(Repos).filter_by(RepoId = PackageInfo.RepoId).one()
 	return PackageInfo, CategoryInfo, RepoInfo
 
-def add_new_build_job(session, ebuild_id, config_id, use_flagsDict):
-	NewBuildJobs =BuildJobs(EbuildId = ebuild_id, ConfigId = config_id, Status = 'Waiting', BuildNow = False, RemoveBin = True)
+def add_new_build_job(session, ebuild_id, setup_id, use_flagsDict, config_id):
+	NewBuildJobs =BuildJobs(EbuildId = ebuild_id, SetupId = setup_id, ConfigsId = config_id, Status = 'Waiting', BuildNow = False, RemoveBin = True)
 	session.add(NewBuildJobs)
 	session.flush()
 	build_job_id = NewBuildJobs.BuildJobId

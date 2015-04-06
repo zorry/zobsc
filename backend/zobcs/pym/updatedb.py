@@ -58,49 +58,6 @@ def update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, conf
 	Session.remove()
 	return new_build_jobs
 
-def add_builds_jobs (session, new_build_jobs_list, config_id):
-	SyncConfigs = {}
-	for ConfigInfoAll in get_config_all_info(session):
-		ConfigMetadata = get_configmetadata_info(session, ConfigInfoAll.ConfigId)
-		if ConfigMetadata.ConfigSync:
-			try:
-				SyncConfigs[ConfigInfoAll.Config]['Syncedconfigs'] = SyncConfigs[ConfigInfoAll.Config]['Syncedconfigs'] + 1
-				SyncConfigs[ConfigInfoAll.Config]['Syncedconfigslist'].append(ConfigInfoAll.ConfigId)
-			except KeyError as e:
-				attd = {}
-				attd['Syncedconfigs'] = 1
-				attd['Next'] = 0
-				attd['id'] = ConfigInfoAll.ConfigId
-				attd['ebuild_id'] = 0
-				attd['Syncedconfigslist'] = []
-				attd['Syncedconfigslist'].append(ConfigInfoAll.ConfigId)
-				SyncConfigs[ConfigInfoAll.Config] = attd
-
-	for new_build_jobs_dict in new_build_jobs_list:
-		for k, v in new_build_jobs_dict.items():
-			ConfigMetadata = get_configmetadata_info(session, k)
-			ConfigInfo = get_config_info(session, k)
-			if not ConfigMetadata.ConfigSync:
-				add_new_build_job(session, v['ebuild_id'], k, v['use_flagsDict'])
-				# B = Build cpv use-flags config
-				# FIXME log_msg need a fix to log the use flags corect.
-				log_msg = "B %s:%s USE: %s %s:%s" % (k, v['repo'], v['use_flagsDict'], ConfigInfo.Hostname, ConfigInfo.Config,)
-				add_zobcs_logs(session, log_msg, "info", config_id)
-			else:
-				for b, l in SyncConfigs.items():
-					if k in l['Syncedconfigslist'] and l['ebuild_id'] != v['ebuild_id'] and l['id'] == k:
-						add_new_build_job(session, v['ebuild_id'], k, v['use_flagsDict'])
-						SyncConfigs[b]['ebuild_id'] = v['ebuild_id']
-						SyncConfigs[b]['id'] = SyncConfigs[b]['Syncedconfigslist'][SyncConfigs[b]['Next']]
-						if SyncConfigs[b]['Next'] == SyncConfigs[b]['Syncedconfigs'] - 1:
-							SyncConfigs[b]['Next'] = 0
-						else:
-							SyncConfigs[b]['Next'] = SyncConfigs[b]['Next'] + 1
-						# B = Build cpv use-flags config
-						# FIXME log_msg need a fix to log the use flags corect.
-						log_msg = "B %s:%s USE: %s %s:%s" % (k, v['repo'], v['use_flagsDict'], ConfigInfo.Hostname, ConfigInfo.Config,)
-						add_zobcs_logs(session, log_msg, "info", config_id)
-
 def update_cpv_db(session, config_id, zobcs_settings_dict):
 	GuestBusy = True
 	log_msg = "Waiting for Guest to be idel"
@@ -153,18 +110,13 @@ def update_cpv_db(session, config_id, zobcs_settings_dict):
 
 		# Run the update package for all package in the list and in a multiprocessing pool
 		for cp in sorted(package_list_tree):
-			new_build_jobs = pool.apply_async(update_cpv_db_pool, (mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id,))
-			if not new_build_jobs is None:
-				new_build_jobs_list.append(new_build_jobs)
+			pool.apply_async(update_cpv_db_pool, (mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id,))
 			# use this when debuging
 			#update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id)
 
 	#close and join the multiprocessing pools
 	pool.close()
 	pool.join()
-	if new_build_jobs_list != []:
-		add_builds_jobs (session, new_build_jobs_list, config_id)
-
 	log_msg = "Checking categories, package and ebuilds ... done"
 	add_zobcs_logs(session, log_msg, "info", config_id)
 

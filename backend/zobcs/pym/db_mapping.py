@@ -12,11 +12,16 @@ class Keywords(Base):
 	KeywordId = Column('keyword_id', Integer, primary_key=True)
 	Keyword = Column('keyword', String)
 	__tablename__ = 'keywords'
+	
+class Setups(Base):
+	SetupId = Column('setup_id', Integer, primary_key=True)
+	Setup = Column('setup', String(100))
+	__tablename__ = 'setups'
 
 class Configs(Base):
 	ConfigId = Column('config_id', Integer, primary_key=True)
 	Hostname = Column('hostname', String(150))
-	Config = Column('config', String(100))
+	SetupId = Column('setup_id', Integer, ForeignKey('setups.setup_id'))
 	Host = Column('default_config', Boolean, default=False)
 	__tablename__ = 'configs'
 	
@@ -116,8 +121,9 @@ class ConfigsEmergeOptions(Base):
 class BuildJobs(Base):
 	BuildJobId = Column('build_job_id', Integer, primary_key=True)
 	EbuildId = Column('ebuild_id', Integer, ForeignKey('ebuilds.ebuild_id'))
+	SetupId = Column('setup_id', Integer, ForeignKey('setups.setup_id'))
 	ConfigId = Column('config_id', Integer, ForeignKey('configs.config_id'))
-	Status = Column('status', Enum('Waiting','Building'))
+	Status = Column('status', Enum('Waiting','Building','Looked',))
 	BuildNow = Column('build_now', Boolean, default=False)
 	RemoveBin = Column('removebin', Boolean ,default=False)
 	TimeStamp = Column('time_stamp', DateTime, nullable=False, default=datetime.datetime.utcnow)
