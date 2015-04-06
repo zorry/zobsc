@@ -12,8 +12,9 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy import and_, or_
 
 # Guest Functions
-def get_config_id(session, config, host):
-	ConfigInfo = session.query(Configs).filter_by(Config = config).filter_by(Hostname = host).one()
+def get_config_id(session, setup, host):
+	SetupInfo = session.query(Setups).filter_by(Setup = setup).one()
+	ConfigInfo = session.query(Configs).filter_by(SetupId = SetupInfo.SetupId).filter_by(Hostname = host).one()
 	return ConfigInfo.ConfigId
 
 def add_zobcs_logs(session, log_msg, log_type, config_id):
