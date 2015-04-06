@@ -8,7 +8,7 @@ import errno
 
 from portage.exception import DigestException, FileNotFound, ParseError, PermissionDenied
 from zobcs.text import get_file_text
-from zobcs.sqlquerys import get_config_all_info, add_zobcs_logs, get_configmetadata_info
+from zobcs.sqlquerys import get_config_all_info, add_zobcs_logs, get_configmetadata_info, get_setup_info
 
 def check_make_conf(session, config_id, zobcs_settings_dict):
 	log_msg = "Checking configs for changes and errors"
@@ -17,7 +17,8 @@ def check_make_conf(session, config_id, zobcs_settings_dict):
 	for ConfigInfo in get_config_all_info(session):
 		attDict={}
 		# Set the config dir
-		check_config_dir = "/var/cache/zobcs/" + zobcs_settings_dict['zobcs_gitreponame'] + "/" + ConfigInfo.Hostname +"/" + ConfigInfo.Config + "/"
+		SetupInfo = get_setup_info(session, ConfigInfo.ConfigId):
+		check_config_dir = "/var/cache/zobcs/" + zobcs_settings_dict['zobcs_gitreponame'] + "/" + ConfigInfo.Hostname +"/" + SetupInfo.Setup + "/"
 		make_conf_file = check_config_dir + "etc/portage/make.conf"
 		ConfigsMetaDataInfo = get_configmetadata_info(session, ConfigInfo.ConfigId)
 		# Check if we can take a checksum on it.
@@ -32,12 +33,12 @@ def check_make_conf(session, config_id, zobcs_settings_dict):
 		except ParseError as e:
 			ConfigsMetaDataInfo.ConfigErrorText = str(e)
 			ConfigsMetaDataInfo.Active = False
-			log_msg = "%s FAIL!" % (ConfigInfo.Config,)
+			log_msg = "%s FAIL!" % (ConfigInfo.Hostname,)
 			add_zobcs_logs(session, log_msg, "info", config_id)
 			session.commit()
 		else:
 			ConfigsMetaDataInfo.Active = True
-			log_msg = "%s PASS" % (ConfigInfo.Config,)
+			log_msg = "%s PASS" % (ConfigInfo.Hostname,)
 			add_zobcs_logs(session, log_msg, "info", config_id)
 			session.commit()
 		if make_conf_checksum_tree != ConfigsMetaDataInfo.Checksum:

@@ -6,6 +6,7 @@ import portage
 import os
 import errno
 import sys
+import time
 
 from _emerge.main import emerge_main
 from zobcs.readconf import get_conf_settings
