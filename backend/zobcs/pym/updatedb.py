@@ -51,12 +51,11 @@ def update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, conf
 	PackagesInfo = get_package_info(session2, categories, package, repo)
 	if PackagesInfo:  
 		# Update the packages with ebuilds
-		new_build_jobs = init_package.update_package_db(PackagesInfo.PackageId)
+		init_package.update_package_db(PackagesInfo.PackageId)
 	else:
 		# Add new package with ebuilds
-		new_build_jobs =init_package.add_new_package_db(cp, repo)
+		init_package.add_new_package_db(cp, repo)
 	Session.remove()
-	return new_build_jobs
 
 def update_cpv_db(session, config_id, zobcs_settings_dict):
 	GuestBusy = True

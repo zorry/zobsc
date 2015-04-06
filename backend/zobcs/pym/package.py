@@ -274,7 +274,6 @@ class zobcs_package(object):
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 		repodir = self._myportdb.getRepositoryPath(repo)
 		pkgdir = repodir + "/" + cp # Get RepoDIR + cp
-		new_build_jobs_dict = None
 
 		# Get the cp mainfest file checksum
 		try:
@@ -349,10 +348,7 @@ class zobcs_package(object):
 					ebuild_id , status = get_ebuild_id_db(self._session, ebuild_version_checksum_tree, package_id)
 					new_ebuild_id_list.append(ebuild_id)
 			package_metadataDict = self.get_package_metadataDict(pkgdir, package_id)
-			new_build_jobs_dict = self.add_package(packageDict, package_metadataDict, package_id, new_ebuild_id_list, old_ebuild_id_list, manifest_checksum_tree)
-		else:
-			new_build_jobs_dict = None
+			self.add_package(packageDict, package_metadataDict, package_id, new_ebuild_id_list, old_ebuild_id_list, manifest_checksum_tree)
 
 		log_msg = "C %s:%s ... Done." % (cp, repo)
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-		return new_build_jobs_dict
