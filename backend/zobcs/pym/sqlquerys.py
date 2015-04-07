@@ -465,7 +465,7 @@ def get_package_info_from_package_id(session, package_id):
 	return PackageInfo, CategoryInfo, RepoInfo
 
 def add_new_build_job(session, ebuild_id, setup_id, use_flagsDict, config_id):
-	NewBuildJobs =BuildJobs(EbuildId = ebuild_id, SetupId = setup_id, ConfigsId = config_id, Status = 'Waiting', BuildNow = False, RemoveBin = True)
+	NewBuildJobs =BuildJobs(EbuildId = ebuild_id, SetupId = setup_id, ConfigId = config_id, Status = 'Waiting', BuildNow = False, RemoveBin = True)
 	session.add(NewBuildJobs)
 	session.flush()
 	build_job_id = NewBuildJobs.BuildJobId

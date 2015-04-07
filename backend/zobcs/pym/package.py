@@ -38,7 +38,7 @@ class zobcs_package(object):
 			ConfigInfo = get_config_info(self._session, config_id)
 			ConfigsMetaData = get_configmetadata_info(self._session, config_id)
 			if ConfigsMetaData.Auto and ConfigsMetaData.Active and ConfigsMetaData.Status != 'Stopped':
-				SetupInfo = get_setup_info(session, config_id)
+				SetupInfo = get_setup_info(self._session, config_id)
 				mysettings_setup = self.change_config(ConfigInfo.Hostname + "/" + SetupInfo.Setup)
 				myportdb_setup = portage.portdbapi(mysettings=mysettings_setup)
 
@@ -146,11 +146,11 @@ class zobcs_package(object):
 
 					# Comper and add the cpv to buildqueue
 					if build_cpv == k:
-						add_new_build_job(session, v['ebuild_id'], setup_id, v['use_flagsDict'], self._config_id)
+						add_new_build_job(self._session, ebuild_id, setup_id, use_flagsDict, self._config_id)
 						# B = Build cpv use-flags config
 						# FIXME log_msg need a fix to log the use flags corect.
-						log_msg = "B %s:%s USE: %s Setup: %s" % (k, v['repo'], v['use_flagsDict'], setup_id,)
-						add_zobcs_logs(session, log_msg, "info", self._config_id)
+						log_msg = "B %s:%s USE: %s Setup: %s" % (k, v['repo'], use_flagsDict, setup_id,)
+						add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 					i = i +1
 
 	def get_package_metadataDict(self, pkgdir, package_id):
