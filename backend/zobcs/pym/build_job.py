@@ -129,7 +129,7 @@ class build_job_action(object):
 		except:
 			pass
 
-		if is_build_job_done(session, build_dict['build_job_id']):
+		if is_build_job_done(self._session, build_dict['build_job_id']):
 			update_buildjobs_status(self._session, build_dict['build_job_id'], 'Looked', self._config_id)
 			log_msg = "build_job %s was not removed" % (build_dict['build_job_id'],)
 			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
