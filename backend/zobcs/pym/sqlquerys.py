@@ -94,7 +94,7 @@ def get_packages_to_build(session, config_id):
 		emerge_options_list.append(EmergeOptionsInfo.EOption)
 	build_dict={}
 	build_dict['config_id'] = config_id
-	build_dict['setup_id'] = BuildJobsIdInfo.SetupId
+	build_dict['setup_id'] = BuildJobsInfo.SetupId
 	build_dict['build_job_id'] = BuildJobsInfo.BuildJobId
 	build_dict['ebuild_id']= EbuildsInfo.EbuildId
 	build_dict['package_id'] = EbuildsInfo.PackageId
