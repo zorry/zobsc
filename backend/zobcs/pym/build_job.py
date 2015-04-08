@@ -60,7 +60,7 @@ class build_job_action(object):
 			build_dict['check_fail'] = True
 		if build_dict['check_fail'] is True:
 				log_fail_queru(self._session, build_dict, settings)
-				update_buildjobs_status(session, build_dict['build_job_id'], 'Waiting', self._config_id)
+				update_buildjobs_status(self._session, build_dict['build_job_id'], 'Waiting', self._config_id)
 				return None
 		return build_cpv_dict
 
@@ -117,7 +117,7 @@ class build_job_action(object):
 		
 		# Call main_emerge to build the package in build_cpv_list
 		print("Build: %s" % build_dict)
-		update_buildjobs_status(session, build_dict['build_job_id'], 'Builing', self._config_id)
+		update_buildjobs_status(self._session, build_dict['build_job_id'], 'Builing', self._config_id)
 		build_fail = emerge_main(argscmd, build_dict, self._session)
 		# Run depclean
 		if  '--depclean' in build_dict['emerge_options'] and not '--nodepclean' in build_dict['emerge_options']:
@@ -130,7 +130,7 @@ class build_job_action(object):
 			pass
 
 		if is_build_job_done(session, build_dict['build_job_id']):
-			update_buildjobs_status(session, build_dict['build_job_id'], 'Looked', self._config_id)
+			update_buildjobs_status(self._session, build_dict['build_job_id'], 'Looked', self._config_id)
 			log_msg = "build_job %s was not removed" % (build_dict['build_job_id'],)
 			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 			print("qurery was not removed")

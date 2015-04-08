@@ -51,7 +51,7 @@ def get_setup_info(session, config_id):
 	return SetupInfo
 
 def update_buildjobs_status(session, build_job_id, status, config_id):
-	BuildJobsInfo = session.query(BuildJobs).filter_by(BuildJobId = build_job_id)
+	BuildJobsInfo = session.query(BuildJobs).filter_by(BuildJobId = build_job_id).one()
 	BuildJobsInfo.Status = status
 	BuildJobsInfo.ConfigId = config_id
 	session.commit()
@@ -72,14 +72,14 @@ def get_packages_to_build(session, config_id):
 				order_by(BuildJobs.BuildJobId)
 	if session.query(BuildJobs).filter_by(SetupId = SetupInfo.Setup).filter(BuildJobs.BuildNow==True).filter_by(BuildJobs.Status == 'Waiting').all() == [] and session.query(BuildJobs).filter_by(SetupId = SetupInfo.Setup).filter_by(BuildJobs.Status == 'Waiting').all() == []:
 		return None
-	if BuildJobsTmp.filter(BuildJobs.BuildNow==True).first() != []:
-		BuildJobsInfo, EbuildsInfo = session.query(BuildJobs, Ebuilds).filter(BuildJobs.SetupId == SetupInfo.Setup).filter(BuildJobs.BuildNow==True). \
-			filter(BuildJobs.EbuildId == Ebuilds.EbuildId).filter_by(BuildJobs.Status == 'Waiting').order_by(BuildJobs.BuildJobId).first()
+	if not BuildJobsTmp.filter_by(BuildNow = True).first() is None:
+		BuildJobsInfo = session.query(BuildJobs).filter_by(SetupId = SetupInfo.SetupId).filter_by(BuildNow = True). \
+			filter_by(Status = 'Waiting').order_by(BuildJobs.BuildJobId).first()
 	else:
-		BuildJobsInfo, EbuildsInfo = session.query(BuildJobs, Ebuilds).filter(BuildJobs.SetupId==SetupInfo.Setup). \
-			filter(BuildJobs.EbuildId==Ebuilds.EbuildId).filter_by(BuildJobs.Status == 'Waiting').order_by(BuildJobs.BuildJobId).first()
-
+		BuildJobsInfo = session.query(BuildJobs).filter_by(SetupId = SetupInfo.SetupId).filter_by(Status = 'Waiting').\
+			order_by(BuildJobs.BuildJobId).first()
 	update_buildjobs_status(session, BuildJobsInfo.BuildJobId, 'Looked', config_id)
+	EbuildsInfo = session.query(Ebuilds).filter_by(EbuildId = BuildJobsInfo.EbuildId).one()
 	PackagesInfo, CategoriesInfo = session.query(Packages, Categories).filter(Packages.PackageId==EbuildsInfo.PackageId).filter(Packages.CategoryId==Categories.CategoryId).one()
 	ReposInfo = session.query(Repos).filter_by(RepoId = PackagesInfo.RepoId).one()
 	uses={}
