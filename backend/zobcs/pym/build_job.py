@@ -117,7 +117,7 @@ class build_job_action(object):
 		
 		# Call main_emerge to build the package in build_cpv_list
 		print("Build: %s" % build_dict)
-		update_buildjobs_status(self._session, build_dict['build_job_id'], 'Builing', self._config_id)
+		update_buildjobs_status(self._session, build_dict['build_job_id'], 'Building', self._config_id)
 		build_fail = emerge_main(argscmd, build_dict, self._session)
 		# Run depclean
 		if  '--depclean' in build_dict['emerge_options'] and not '--nodepclean' in build_dict['emerge_options']:
