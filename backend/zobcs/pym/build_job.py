@@ -60,7 +60,6 @@ class build_job_action(object):
 			build_dict['check_fail'] = True
 		if build_dict['check_fail'] is True:
 				log_fail_queru(self._session, build_dict, settings)
-				update_buildjobs_status(self._session, build_dict['build_job_id'], 'Waiting', self._config_id)
 				return None
 		return build_cpv_dict
 
@@ -110,10 +109,6 @@ class build_job_action(object):
 		print("Emerge options: %s" % argscmd)
 		log_msg = "argscmd: %s" % (argscmd,)
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-
-		# close the db for the multiprocessing pool will make new ones
-		# and we don't need this one for some time.
-		# self._session.close()
 		
 		# Call main_emerge to build the package in build_cpv_list
 		print("Build: %s" % build_dict)
