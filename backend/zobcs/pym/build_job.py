@@ -38,11 +38,12 @@ class build_job_action(object):
 		except:
 			ebuild_version_checksum_tree = None
 		if ebuild_version_checksum_tree == build_dict['checksum']:
-			init_flags = zobcs_use_flags(settings, portdb, cpv)
-			build_use_flags_list = init_flags.comper_useflags(build_dict)
-			log_msg = "build_use_flags_list %s" % (build_use_flags_list,)
-			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-			manifest_error = init_manifest.check_file_in_manifest(portdb, cpv, build_use_flags_list, repo)
+			if manifest_error = init_manifest.check_file_in_manifest(portdb, cpv, [], repo) is None:
+				init_flags = zobcs_use_flags(settings, portdb, cpv)
+				build_use_flags_list = init_flags.comper_useflags(build_dict)
+				log_msg = "build_use_flags_list %s" % (build_use_flags_list,)
+				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+				manifest_error = init_manifest.check_file_in_manifest(portdb, cpv, build_use_flags_list, repo)
 			if manifest_error is None:
 				build_dict['check_fail'] = False
 				build_cpv_dict = {}
@@ -50,18 +51,16 @@ class build_job_action(object):
 				log_msg = "build_cpv_dict: %s" % (build_cpv_dict,)
 				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 				return build_cpv_dict
-			else:
-				build_dict['type_fail'] = "Manifest error"
-				build_dict['check_fail'] = True
-				log_msg = "Manifest error: %s:%s" % (cpv, manifest_error)
-				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+			build_dict['type_fail'] = "Manifest error"
+			build_dict['check_fail'] = True
+			log_msg = "Manifest error: %s:%s" % (cpv, manifest_error)
+			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 		else:
 			build_dict['type_fail'] = "Wrong ebuild checksum"
 			build_dict['check_fail'] = True
 		if build_dict['check_fail'] is True:
 				log_fail_queru(self._session, build_dict, settings)
-				return None
-		return build_cpv_dict
+		return None
 
 	def build_procces(self, buildqueru_cpv_dict, build_dict, settings, portdb):
 		build_cpv_list = []
