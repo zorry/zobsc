@@ -38,7 +38,7 @@ class build_job_action(object):
 		except:
 			ebuild_version_checksum_tree = None
 		if ebuild_version_checksum_tree == build_dict['checksum']:
-			if manifest_error = init_manifest.check_file_in_manifest(portdb, cpv, [], repo) is None:
+			if init_manifest.check_file_in_manifest(portdb, cpv, [], repo) is None:
 				init_flags = zobcs_use_flags(settings, portdb, cpv)
 				build_use_flags_list = init_flags.comper_useflags(build_dict)
 				log_msg = "build_use_flags_list %s" % (build_use_flags_list,)
