@@ -290,55 +290,49 @@ def log_fail_queru(session, build_dict, settings):
 		add_fail_times(session, fail_querue_dict)
 		update_buildjobs_status(session, build_dict['build_job_id'], 'Waiting', config_id)
 	else:
-		if NewBuildJobsRedo.FailTimes < 3:
-			NewBuildJobsRedo.FailTimes = NewBuildJobsRedo.FailTimes + 1
-			update_fail_times(session, NewBuildJobsRedo)
-			update_buildjobs_status(session, build_dict['build_job_id'], 'Waiting', config_id)
-			return
-		else:
-			build_log_dict = {}
-			error_log_list = []
-			qa_error_list = []
-			repoman_error_list = []
-			sum_build_log_list = []
-			sum_build_log_list.append("2")
-			error_log_list.append(build_dict['type_fail'])
-			build_log_dict['repoman_error_list'] = repoman_error_list
-			build_log_dict['qa_error_list'] = qa_error_list
-			build_log_dict['summary_error_list'] = sum_build_log_list
-			if build_dict['type_fail'] == 'merge fail':
-				error_log_list = []
-				for k, v in build_dict['failed_merge'].items():
-					error_log_list.append(v['fail_msg'])
-			build_log_dict['error_log_list'] = error_log_list
-			build_error = ""
-			if error_log_list != []:
-				for log_line in error_log_list:
-					build_error = build_error + log_line
-			build_log_dict['build_error'] = build_error
-			summary_error = ""
-			if sum_build_log_list != []:
-				for sum_log_line in sum_build_log_list:
-					summary_error = summary_error + " " + sum_log_line
-			build_log_dict['log_hash'] = '0'
-			useflagsdict = {}
-			if build_dict['build_useflags'] == {}:
-				for k, v in build_dict['build_useflags'].items():
-					use_id = get_use_id(session, k)
-					useflagsdict[use_id] = v
-					build_dict['build_useflags'] = useflagsdict
-			else:
-				build_dict['build_useflags'] = None			
-			if settings.get("PORTAGE_LOG_FILE") is not None:
-				ConfigInfo= get_config_info(session, config_id)
-				host_config = ConfigInfo.Hostname +"/" + ConfigInfo.Config
-				build_log_dict['logfilename'] = settings.get("PORTAGE_LOG_FILE").split(host_config)[1]
-				os.chmod(settings.get("PORTAGE_LOG_FILE"), 0o664)
-			else:
-				build_log_dict['logfilename'] = ""
-				build_log_dict['hilight_dict'] = {}
-			settings2, trees, tmp = load_emerge_config()
-			build_log_dict['emerge_info'] = get_emerge_info_id(settings2, trees, session, config_id)
-			log_id = add_new_buildlog(session, build_dict, build_log_dict)
-			del_old_build_jobs(session, build_dict['build_job_id'])
 
+		build_log_dict = {}
+		error_log_list = []
+		qa_error_list = []
+		repoman_error_list = []
+		sum_build_log_list = []
+		sum_build_log_list.append("2")
+		error_log_list.append(build_dict['type_fail'])
+		build_log_dict['repoman_error_list'] = repoman_error_list
+		build_log_dict['qa_error_list'] = qa_error_list
+		build_log_dict['summary_error_list'] = sum_build_log_list
+		if build_dict['type_fail'] == 'merge fail':
+			error_log_list = []
+			for k, v in build_dict['failed_merge'].items():
+				error_log_list.append(v['fail_msg'])
+		build_log_dict['error_log_list'] = error_log_list
+		build_error = ""
+		if error_log_list != []:
+			for log_line in error_log_list:
+				build_error = build_error + log_line
+		build_log_dict['build_error'] = build_error
+		summary_error = ""
+		if sum_build_log_list != []:
+			for sum_log_line in sum_build_log_list:
+				summary_error = summary_error + " " + sum_log_line
+		build_log_dict['log_hash'] = '0'
+		useflagsdict = {}
+		if build_dict['build_useflags'] == {}:
+			for k, v in build_dict['build_useflags'].items():
+				use_id = get_use_id(session, k)
+				useflagsdict[use_id] = v
+				build_dict['build_useflags'] = useflagsdict
+		else:
+			build_dict['build_useflags'] = None			
+		if settings.get("PORTAGE_LOG_FILE") is not None:
+			ConfigInfo= get_config_info(session, config_id)
+			host_config = ConfigInfo.Hostname +"/" + ConfigInfo.Config
+			build_log_dict['logfilename'] = settings.get("PORTAGE_LOG_FILE").split(host_config)[1]
+			os.chmod(settings.get("PORTAGE_LOG_FILE"), 0o664)
+		else:
+			build_log_dict['logfilename'] = ""
+			build_log_dict['hilight_dict'] = {}
+		settings2, trees, tmp = load_emerge_config()
+		build_log_dict['emerge_info'] = get_emerge_info_id(settings2, trees, session, config_id)
+		log_id = add_new_buildlog(session, build_dict, build_log_dict)
+		del_old_build_jobs(session, build_dict['build_job_id'])
