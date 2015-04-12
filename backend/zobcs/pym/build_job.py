@@ -33,6 +33,7 @@ class build_job_action(object):
 		cpv = build_dict['cpv']
 		pkgdir = portdb.getRepositoryPath(repo) + "/" + cp
 		init_manifest =  zobcs_manifest(settings, pkgdir)
+		manifest_error = None
 		try:
 			ebuild_version_checksum_tree = portage.checksum.sha256hash(pkgdir + "/" + package + "-" + build_dict['ebuild_version'] + ".ebuild")[0]
 		except:
