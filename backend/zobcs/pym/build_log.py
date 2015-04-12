@@ -281,8 +281,7 @@ def add_buildlog_main(settings, pkg, trees):
 
 def log_fail_queru(session, build_dict, settings):
 	config_id = build_dict['config_id']
-	NewBuildJobsRedo = get_fail_times(session, build_dict)
-	if NewBuildJobsRedo is None:
+	if get_fail_times(session, build_dict):
 		fail_querue_dict = {}
 		fail_querue_dict['build_job_id'] = build_dict['build_job_id']
 		fail_querue_dict['fail_type'] = build_dict['type_fail']
@@ -290,7 +289,6 @@ def log_fail_queru(session, build_dict, settings):
 		add_fail_times(session, fail_querue_dict)
 		update_buildjobs_status(session, build_dict['build_job_id'], 'Waiting', config_id)
 	else:
-
 		build_log_dict = {}
 		error_log_list = []
 		qa_error_list = []

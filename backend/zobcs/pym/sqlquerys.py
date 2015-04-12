@@ -275,14 +275,13 @@ def get_fail_times(session, build_dict):
 	try:
 		FailInfo = session.query(BuildJobsRedo).filter_by(BuildJobId = build_dict['build_job_id']).filter_by(FailType = build_dict['type_fail']).one()
 	except NoResultFound as e:
-		return None
-	return FailInfo
+		return False
+	return True
 
 def add_fail_times(session, fail_querue_dict):
+	print(fail_querue_dict)
 	NewBuildJobsRedo = BuildJobsRedo(BuildJobId = fail_querue_dict['build_job_id'], FailType = fail_querue_dict['fail_type'], FailTimes = fail_querue_dict['fail_times'])
 	session.add(NewBuildJobsRedo)
-	NewBuildJobs = session.query(BuildJobs).filter_by(BuildJobId = fail_querue_dict['build_job_id']).one()
-	NewBuildJobs.TimeStamp = datetime.datetime.utcnow()
 	session.commit()
 
 # Host Functions
