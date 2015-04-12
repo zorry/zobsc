@@ -33,13 +33,15 @@ class build_job_action(object):
 		cpv = build_dict['cpv']
 		pkgdir = portdb.getRepositoryPath(repo) + "/" + cp
 		init_manifest =  zobcs_manifest(settings, pkgdir)
-		manifest_error = None
+		build_use_flags_list = []
 		try:
 			ebuild_version_checksum_tree = portage.checksum.sha256hash(pkgdir + "/" + package + "-" + build_dict['ebuild_version'] + ".ebuild")[0]
 		except:
 			ebuild_version_checksum_tree = None
 		if ebuild_version_checksum_tree == build_dict['checksum']:
-			if init_manifest.check_file_in_manifest(portdb, cpv, [], repo) is None:
+			manifest_error = init_manifest.check_file_in_manifest(portdb, cpv, build_use_flags_list, repo)
+			print(manifest_error)
+			if manifest_error is None:
 				init_flags = zobcs_use_flags(settings, portdb, cpv)
 				build_use_flags_list = init_flags.comper_useflags(build_dict)
 				log_msg = "build_use_flags_list %s" % (build_use_flags_list,)
