@@ -3,7 +3,7 @@
 
 from f_zobcs.models import *
 from django.shortcuts import get_object_or_404
-from f_zobcs.utils.flags import zobcs_use_flags
+from zobcs.flags import zobcs_use_flags
 import portage
 def config_get_use(ebuild_id, config_id):
 	CS = get_object_or_404(Configs, ConfigId = config_id)
