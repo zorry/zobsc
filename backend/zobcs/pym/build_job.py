@@ -147,11 +147,11 @@ class build_job_action(object):
 		if build_dict is None:
 			return
 		print("build_dict: %s" % (build_dict,))
-		settings, trees, mtimedb = load_emerge_config()
-		portdb = trees[settings["ROOT"]]["porttree"].dbapi
 		log_msg = "build_dict: %s" % (build_dict,)
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 		if not build_dict['ebuild_id'] is None and build_dict['checksum'] is not None:
+			settings, trees, mtimedb = load_emerge_config()
+			portdb = trees[settings["ROOT"]]["porttree"].dbapi
 			buildqueru_cpv_dict = self.make_build_list(build_dict, settings, portdb)
 			log_msg = "buildqueru_cpv_dict: %s" % (buildqueru_cpv_dict,)
 			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
