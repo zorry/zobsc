@@ -87,14 +87,13 @@ def views_buildinfo(request, ebuild_id, buildlog_id):
 			adict['BugId'] = B.BugId
 		config_list = []
 		BC = BuildLogsConfig.objects.get(BuildLogId = B.BuildLogId)
-		CM = ConfigsMetadata.objects.get(ConfigId = BC.ConfigId.ConfigId)
 		CEO_tmp = ConfigsEmergeOptions.objects.filter(ConfigId = BC.ConfigId.ConfigId)
 		BU_tmp = BuildLogsUse.objects.filter(BuildLogId = BC.BuildLogId)
 		config_eoption = []
 		adict['configid'] = BC.ConfigId.ConfigId
 		adict['hostname'] = BC.ConfigId.HostName
-		adict['config'] = BC.ConfigId.Config
-		adict['profile'] = CM.Profile
+		adict['config'] = BC.ConfigId.SetupId.Setup
+		adict['profile'] = BC.ConfigId.SetupId.Profile
 		adict['logid'] = BC.LogId
 		adict['logname'] = BC.LogName[1:]
 		adict['emerge_info_text'] = BC.EInfoId.EmergeInfoText
@@ -155,7 +154,6 @@ def views_newlogs(request):
 	NewLogs = []
 	for BC in BuildLogsConfig.objects.order_by('-TimeStamp')[:Lines]:
 		EM = EbuildsMetadata.objects.get(EbuildId = BC.BuildLogId.EbuildId.EbuildId)
-		CM = ConfigsMetadata.objects.get(ConfigId = BC.ConfigId.ConfigId)
 		adict = {}
 		adict['BuildLogId'] = BC.BuildLogId.BuildLogId
 		adict['EbuildId'] = BC.BuildLogId.EbuildId.EbuildId
@@ -173,8 +171,8 @@ def views_newlogs(request):
 			adict['BugId'] = BC.BuildLogId.BugId
 		adict['configid'] = BC.ConfigId.ConfigId
 		adict['hostname'] = BC.ConfigId.HostName
-		adict['config'] = BC.ConfigId.Config
-		adict['profile'] = CM.Profile
+		adict['config'] = BC.ConfigId.SetupId.Setup
+		adict['profile'] = BC.ConfigId.SetupId.Profile
 		adict['logname'] = BC.LogName[1:]
 		NewLogs.append(adict)
 	return render(request, 'pages/newlogs.html', { 'logs' : NewLogs })
@@ -286,7 +284,7 @@ def views_packagesbuild(request, ebuild_id):
 		for BJ in BJtmp:
 			aadict = {}
 			aadict['Id'] = BJ.BuildJobId
-			aadict['Config'] = BJ.ConfigId.Config
+			aadict['Config'] = BJ.ConfigId.SetupId.Setup
 			BJUtmp = BuildJobsUse.objects.filter(BuildJobId = aadict['Id'])
 			UseList = []
 			for BJU in BJUtmp:

@@ -39,7 +39,7 @@ class BugForm(forms.Form):
 		return u'Product : %s, Component : %s, Version : %s, Summary : %s, Description : %s, EmergeInfo : %s, AssigendTo : %s' % (self.Product, self.Component, self.Version, self.Summary, self.Description, self.EmergeInfo, self.AssigendTo)
 
 class ChoiceBuildConfigSetupSelect(ModelForm):
-	Config = forms.ChoiceField(choices=[(x.ConfigId, x.Config) for x in Configs.objects.filter(DefaultConfig = False)])
+	Config = forms.ChoiceField(choices=[(x.ConfigId, x.SetupId.Setup) for x in Configs.objects.filter(DefaultConfig = False)])
 	class Meta:
 		model = Configs
 		fields = ['Config']

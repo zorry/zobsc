@@ -11,10 +11,19 @@ class Keywords(models.Model):
 	def __unicode__(self):
 		return u'KeywordId : %s, Keyword : %s' % (self.KeywordId, self.Keyword)
 
+class Setups(models.Model):
+	SetupId = models.AutoField(primary_key=True, db_column=u'setup_id')
+	Setup = models.CharField(max_length=100, db_column=u'setup')
+	Profile = models.CharField(max_length=150, db_column=u'profile')
+	class Meta:
+		db_table = u'setups'
+	def __unicode__(self):
+		return u'SetupId : %s, Setup : %s, Profile : %s' % (self.SetupId, self.Setup, self.Profile)
+
 class Configs(models.Model):
 	ConfigId = models.AutoField(primary_key=True, db_column=u'config_id')
 	HostName = models.CharField(max_length=150, db_column=u'hostname')
-	Config = models.CharField(max_length=100, db_column=u'config')
+	SetupId = models.ForeignKey(Setups, db_column=u'setup_id')
 	DefaultConfig = models.BooleanField(db_column=u'default_config')
 	class Meta:
 		db_table = u'configs'
@@ -290,7 +299,6 @@ class BuildLogsErrors(models.Model):
 class ConfigsMetadata(models.Model):
 	Id =  models.IntegerField(primary_key=True, db_column=u'id')
 	ConfigId = models.ForeignKey(Configs, db_column=u'config_id')
-	Profile = models.CharField(max_length=150, db_column=u'profile')
 	KeywordId = models.ForeignKey(Keywords, db_column=u'keyword_id')
 	MakeConfText = models.TextField(db_column=u'make_conf_text')
 	Checksum = models.CharField(max_length=100, db_column=u'checksum')
@@ -305,7 +313,7 @@ class ConfigsMetadata(models.Model):
 	class Meta:
 		db_table = u'configs_metadata'
 	def __unicode__(self):
-		return u'ConfigId : %s, Profile : %s, KeywordId : %s ,MakeConfText : %s, Checksum : %s, ConfigSync : %s, Active : %s, ConfigErrorText : %s, Updateing : %s, Status : %s, Auto : %s, GitWww : %s, TimeStamp : %s' % (self.ConfigId, self.Profile, self.KeywordId, self.MakeConfText, self.Checksum, self.ConfigSync, self.Active, self.ConfigErrorText, self.Updateing, self.Status, self.Auto, self.GitWww, self.TimeStamp)
+		return u'ConfigId : %s, KeywordId : %s ,MakeConfText : %s, Checksum : %s, ConfigSync : %s, Active : %s, ConfigErrorText : %s, Updateing : %s, Status : %s, Auto : %s, GitWww : %s, TimeStamp : %s' % (self.ConfigId, self.KeywordId, self.MakeConfText, self.Checksum, self.ConfigSync, self.Active, self.ConfigErrorText, self.Updateing, self.Status, self.Auto, self.GitWww, self.TimeStamp)
 
 class EbuildsIuse(models.Model):
 	Id =  models.IntegerField(primary_key=True, db_column=u'id')
