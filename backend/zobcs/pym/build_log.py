@@ -17,16 +17,16 @@ from portage import _unicode_encode
 from _emerge.main import parse_opts
 
 portage.proxy.lazyimport.lazyimport(globals(),
-	'tbc.actions:action_info,load_emerge_config',
+	'zobcs.actions:action_info,load_emerge_config',
 )
 
-from tbc.repoman_tbc import tbc_repoman
-from tbc.text import get_log_text_dict
-from tbc.package import tbc_package
-from tbc.readconf import get_conf_settings
-from tbc.flags import tbc_use_flags
-from tbc.ConnectionManager import NewConnection
-from tbc.sqlquerys import add_tbc_logs, get_config_id, get_ebuild_id_db, add_new_buildlog, \
+from zobcs.repoman_zobcs import zobcs_repoman
+from zobcs.text import get_log_text_dict
+from zobcs.package import zobcs_package
+from zobcs.readconf import get_conf_settings
+from zobcs.flags import zobcs_use_flags
+from zobcs.ConnectionManager import NewConnection
+from zobcs.sqlquerys import add_zobcs_logs, get_config_id, get_ebuild_id_db, add_new_buildlog, \
 	get_package_info, get_build_job_id, get_use_id, get_config_info, get_hilight_info, get_error_info_list, \
 	add_e_info, get_fail_times, add_fail_times, update_fail_times, del_old_build_jobs, add_old_ebuild, \
 	update_buildjobs_status
@@ -40,7 +40,7 @@ def get_build_dict_db(session, config_id, settings, pkg):
 	repo = pkg.repo
 	ebuild_version = cpv_getversion(pkg.cpv)
 	log_msg = "Logging %s:%s" % (pkg.cpv, repo,)
-	add_tbc_logs(session, log_msg, "info", config_id)
+	add_zobcs_logs(session, log_msg, "info", config_id)
 	PackageInfo = get_package_info(session, categories, package, repo)
 	build_dict = {}
 	build_dict['ebuild_version'] = ebuild_version
@@ -49,7 +49,7 @@ def get_build_dict_db(session, config_id, settings, pkg):
 	build_dict['categories'] = categories
 	build_dict['package'] = package
 	build_dict['config_id'] = config_id
-	init_useflags = tbc_use_flags(settings, myportdb, pkg.cpv)
+	init_useflags = zobcs_use_flags(settings, myportdb, pkg.cpv)
 	iuse_flags_list, final_use_list = init_useflags.get_flags_pkg(pkg, settings)
 	iuse = []
 	for iuse_line in iuse_flags_list:
@@ -75,19 +75,19 @@ def get_build_dict_db(session, config_id, settings, pkg):
 	if status:
 		if ebuild_id_list is None:
 			log_msg = "%s:%s Don't have any ebuild_id!" % (pkg.cpv, repo,)
-			add_tbc_logs(session, log_msg, "info", config_id)
+			add_zobcs_logs(session, log_msg, "info", config_id)
 			update_manifest_sql(session, build_dict['package_id'], "0")
-			init_package = tbc_package(session, settings, myportdb)
+			init_package = zobcs_package(session, settings, myportdb)
 			init_package.update_package_db(build_dict['package_id'])
 			ebuild_id_list, status = get_ebuild_id_db(session, build_dict['checksum'], build_dict['package_id'])
 			if status and ebuild_id is None:
 				log_msg = "%s:%s Don't have any ebuild_id!" % (pkg.cpv, repo,)
-				add_tbc_logs(session, log_msg, "error", config_id)
+				add_zobcs_logs(session, log_msg, "error", config_id)
 		else:
 			old_ebuild_id_list = []
 			for ebuild_id in ebuild_id_list:
 				log_msg = "%s:%s:%s Dups of checksums" % (pkg.cpv, repo, ebuild_id,)
-				add_tbc_logs(session, log_msg, "error", config_id)
+				add_zobcs_logs(session, log_msg, "error", config_id)
 				old_ebuild_id_list.append(ebuild_id)
 			add_old_ebuild(session, old_ebuild_id_list)
 		return
@@ -184,7 +184,7 @@ def search_buildlog(session, logfile_text_dict, max_text_lines):
 
 def get_buildlog_info(session, settings, pkg, build_dict):
 	myportdb = portage.portdbapi(mysettings=settings)
-	init_repoman = tbc_repoman(settings, myportdb)
+	init_repoman = zobcs_repoman(settings, myportdb)
 	logfile_text_dict, max_text_lines = get_log_text_dict(settings.get("PORTAGE_LOG_FILE"))
 	hilight_dict = search_buildlog(session, logfile_text_dict, max_text_lines)
 	error_log_list = []
@@ -235,11 +235,11 @@ def get_emerge_info_id(settings, trees, session, config_id):
 
 def add_buildlog_main(settings, pkg, trees):
 	reader=get_conf_settings()
-	tbc_settings_dict=reader.read_tbc_settings_all()
-	config = tbc_settings_dict['tbc_config']
-	hostname =tbc_settings_dict['hostname']
+	zobcs_settings_dict=reader.read_zobcs_settings_all()
+	config = zobcs_settings_dict['zobcs_config']
+	hostname =zobcs_settings_dict['hostname']
 	host_config = hostname + "/" + config
-	Session = sessionmaker(bind=NewConnection(tbc_settings_dict))
+	Session = sessionmaker(bind=NewConnection(zobcs_settings_dict))
 	session = Session()
 	config_id = get_config_id(session, config, hostname)
 	if pkg.type_name == "binary":
@@ -248,7 +248,7 @@ def add_buildlog_main(settings, pkg, trees):
 		build_dict = get_build_dict_db(session, config_id, settings, pkg)
 	if build_dict is None:
 		log_msg = "Package %s:%s is NOT logged." % (pkg.cpv, pkg.repo,)
-		add_tbc_logs(session, log_msg, "info", config_id)
+		add_zobcs_logs(session, log_msg, "info", config_id)
 		session.close
 		return
 	build_log_dict = {}
@@ -265,17 +265,17 @@ def add_buildlog_main(settings, pkg, trees):
 	build_log_dict['log_hash'] = log_hash.hexdigest()
 	build_log_dict['logfilename'] = settings.get("PORTAGE_LOG_FILE").split(host_config)[1]
 	log_msg = "Logfile name: %s" % (settings.get("PORTAGE_LOG_FILE"),)
-	add_tbc_logs(session, log_msg, "info", config_id)
+	add_zobcs_logs(session, log_msg, "info", config_id)
 	build_log_dict['emerge_info'] = get_emerge_info_id(settings, trees, session, config_id)
 	log_id = add_new_buildlog(session, build_dict, build_log_dict)
 
 	if log_id is None:
 		log_msg = "Package %s:%s is NOT logged." % (pkg.cpv, pkg.repo,)
-		add_tbc_logs(session, log_msg, "info", config_id)
+		add_zobcs_logs(session, log_msg, "info", config_id)
 	else:
 		os.chmod(settings.get("PORTAGE_LOG_FILE"), 0o664)
 		log_msg = "Package: %s:%s is logged." % (pkg.cpv, pkg.repo,)
-		add_tbc_logs(session, log_msg, "info", config_id)
+		add_zobcs_logs(session, log_msg, "info", config_id)
 		print("\n>>> Logging %s:%s\n" % (pkg.cpv, pkg.repo,))
 	session.close
 
