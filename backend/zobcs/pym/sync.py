@@ -13,7 +13,6 @@ from pygit2 import Repository, GIT_MERGE_ANALYSIS_FASTFORWARD, GIT_MERGE_ANALYSI
 from _emerge.main import emerge_main
 from zobcs.readconf import get_conf_settings
 from zobcs.sqlquerys import get_config_id, add_zobcs_logs, get_config_all_info, get_configmetadata_info
-from zobcs.updatedb import update_db_main
 from zobcs.readconf import read_config_settings
 
 def sync_tree(session):
