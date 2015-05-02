@@ -7,6 +7,8 @@ import os
 import errno
 import sys
 import time
+from pygit2 import Repository, GIT_MERGE_ANALYSIS_FASTFORWARD, GIT_MERGE_ANALYSIS_NORMAL, \
+        GIT_MERGE_ANALYSIS_UP_TO_DATE
 
 from _emerge.main import emerge_main
 from zobcs.readconf import get_conf_settings
@@ -65,9 +67,38 @@ def sync_tree(session):
 			pass
 		log_msg = "Emerge --sync ... Done."
 		add_zobcs_logs(session, log_msg, "info", config_id)
-	result = update_db_main(session, config_id)
-	if result:
-		return True
-	else:
-		log_msg = "Updatedb fail"
+	return True
+
+def git_pull(session, git_repo, config_id):
+	log_msg = "Git pull"
+	add_zobcs_logs(session, log_msg, "info", config_id)
+	repo = Repository(git_repo + ".git")
+	remote = repo.remotes["origin"]
+	remote.fetch()
+	remote_master_id = repo.lookup_reference('refs/remotes/origin/master').target
+	merge_result, _ = repo.merge_analysis(remote_master_id)
+	if merge_result & GIT_MERGE_ANALYSIS_UP_TO_DATE:
+		log_msg = "Repo is up to date"
 		add_zobcs_logs(session, log_msg, "info", config_id)
+	elif merge_result & GIT_MERGE_ANALYSIS_FASTFORWARD:
+		repo.checkout_tree(repo.get(remote_master_id))
+		master_ref = repo.lookup_reference('refs/heads/master')
+		master_ref.set_target(remote_master_id)
+		repo.head.set_target(remote_master_id)
+	elif merge_result & GIT_MERGE_ANALYSIS_NORMAL:
+		repo.merge(remote_master_id)
+		assert repo.index.conflicts is None, 'Conflicts, ahhhh!'
+		user = repo.default_signature
+		tree = repo.index.write_tree()
+		commit = repo.create_commit('HEAD',
+			user,
+			user,
+			'Merge!',
+			tree,
+			[repo.head.target, remote_master_id])
+		repo.state_cleanup()
+	else:
+		raise AssertionError('Unknown merge analysis result')
+	log_msg = "Git pull ... Done"
+	add_zobcs_logs(session, log_msg, "info", config_id)
+	return True
