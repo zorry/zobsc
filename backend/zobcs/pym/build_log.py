@@ -29,7 +29,7 @@ from zobcs.ConnectionManager import NewConnection
 from zobcs.sqlquerys import add_zobcs_logs, get_config_id, get_ebuild_id_db, add_new_buildlog, \
 	get_package_info, get_build_job_id, get_use_id, get_config_info, get_hilight_info, get_error_info_list, \
 	add_e_info, get_fail_times, add_fail_times, update_fail_times, del_old_build_jobs, add_old_ebuild, \
-	update_buildjobs_status
+	update_buildjobs_status, update_manifest_sql
 from sqlalchemy.orm import sessionmaker
 
 def get_build_dict_db(session, config_id, settings, pkg):
