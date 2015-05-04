@@ -23,16 +23,16 @@ portage.proxy.lazyimport.lazyimport(globals(),
 from zobcs.repoman_zobcs import zobcs_repoman
 from zobcs.text import get_log_text_dict
 from zobcs.package import zobcs_package
-from zobcs.readconf import get_conf_settings
+from zobcs.readconf import read_config_settings
 from zobcs.flags import zobcs_use_flags
 from zobcs.ConnectionManager import NewConnection
 from zobcs.sqlquerys import add_zobcs_logs, get_config_id, get_ebuild_id_db, add_new_buildlog, \
 	get_package_info, get_build_job_id, get_use_id, get_config_info, get_hilight_info, get_error_info_list, \
 	add_e_info, get_fail_times, add_fail_times, update_fail_times, del_old_build_jobs, add_old_ebuild, \
-	update_buildjobs_status, update_manifest_sql
+	update_buildjobs_status, update_manifest_sql, add_repoman_qa
 from sqlalchemy.orm import sessionmaker
 
-def get_build_dict_db(session, config_id, settings, pkg):
+def get_build_dict_db(session, config_id, settings, zobcs_settings_dict, pkg):
 	myportdb = portage.portdbapi(mysettings=settings)
 	cpvr_list = catpkgsplit(pkg.cpv, silent=1)
 	categories = cpvr_list[0]
@@ -77,7 +77,7 @@ def get_build_dict_db(session, config_id, settings, pkg):
 			log_msg = "%s:%s Don't have any ebuild_id!" % (pkg.cpv, repo,)
 			add_zobcs_logs(session, log_msg, "info", config_id)
 			update_manifest_sql(session, build_dict['package_id'], "0")
-			init_package = zobcs_package(session, settings, myportdb)
+			init_package = zobcs_package(session, settings, myportdb, config_id, zobcs_settings_dict)
 			init_package.update_package_db(build_dict['package_id'])
 			ebuild_id_list, status = get_ebuild_id_db(session, build_dict['checksum'], build_dict['package_id'])
 			if status and ebuild_id is None:
@@ -209,8 +209,12 @@ def get_buildlog_info(session, settings, pkg, build_dict):
 	repoman_error_list = init_repoman.check_repoman(build_dict['cpv'], pkg.repo)
 	if repoman_error_list != []:
 		sum_build_log_list.append("1") # repoman = 1
+	else:
+		repoman_error_list = False
 	if qa_error_list != []:
 		sum_build_log_list.append("2") # qa = 2
+	else:
+		qa_error_list = False
 	error_search_line = "^ \\* ERROR: "
 	for error_log_line in error_log_list:
 		if re.search(error_search_line, error_log_line):
@@ -234,8 +238,7 @@ def get_emerge_info_id(settings, trees, session, config_id):
 	return "\n".join(emerge_info_list)
 
 def add_buildlog_main(settings, pkg, trees):
-	reader=get_conf_settings()
-	zobcs_settings_dict=reader.read_zobcs_settings_all()
+	zobcs_settings_dict = read_config_settings()
 	config = zobcs_settings_dict['zobcs_config']
 	hostname =zobcs_settings_dict['hostname']
 	host_config = hostname + "/" + config
@@ -245,7 +248,7 @@ def add_buildlog_main(settings, pkg, trees):
 	if pkg.type_name == "binary":
 		build_dict = None
 	else:
-		build_dict = get_build_dict_db(session, config_id, settings, pkg)
+		build_dict = get_build_dict_db(session, config_id, settings, read_config_settings, pkg)
 	if build_dict is None:
 		log_msg = "Package %s:%s is NOT logged." % (pkg.cpv, pkg.repo,)
 		add_zobcs_logs(session, log_msg, "info", config_id)
@@ -273,6 +276,7 @@ def add_buildlog_main(settings, pkg, trees):
 		log_msg = "Package %s:%s is NOT logged." % (pkg.cpv, pkg.repo,)
 		add_zobcs_logs(session, log_msg, "info", config_id)
 	else:
+		add_repoman_qa(session, build_log_dict)
 		os.chmod(settings.get("PORTAGE_LOG_FILE"), 0o664)
 		log_msg = "Package: %s:%s is logged." % (pkg.cpv, pkg.repo,)
 		add_zobcs_logs(session, log_msg, "info", config_id)
@@ -291,13 +295,11 @@ def log_fail_queru(session, build_dict, settings):
 	else:
 		build_log_dict = {}
 		error_log_list = []
-		qa_error_list = []
-		repoman_error_list = []
 		sum_build_log_list = []
 		sum_build_log_list.append("2")
 		error_log_list.append(build_dict['type_fail'])
-		build_log_dict['repoman_error_list'] = repoman_error_list
-		build_log_dict['qa_error_list'] = qa_error_list
+		build_log_dict['repoman_error_list'] = False
+		build_log_dict['qa_error_list'] = False
 		build_log_dict['summary_error_list'] = sum_build_log_list
 		if build_dict['type_fail'] == 'merge fail':
 			error_log_list = []
