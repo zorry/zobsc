@@ -267,12 +267,18 @@ def add_new_buildlog(session, build_dict, build_log_dict):
 		return build_log_id
 
 def add_repoman_qa(session, build_log_dict, log_id):
+	repoman_error = ""
+	qa_error = ""
 	if build_log_dict['qa_error_list']:
-		NewBuildLogQA = BuildLogsQA(BuildLogId = log_id, SummeryText = build_log_dict['qa_error_list'])
+		for qa_text in build_log_dict['qa_error_list']:
+			qa_error = qa_error + build_log_dict['qa_error_list']
+		NewBuildLogQA = BuildLogsQA(BuildLogId = log_id, SummeryText = qa_error)
 		session.add(NewBuildLogQA)
 		session.commit()
 	if build_log_dict['repoman_error_list']:
-		NewBuildLogRepoman = BuildLogsRepoman(BuildLogId = log_id, SummeryText = build_log_dict['repoman_error_list'])
+		for repoman_text in build_log_dict['repoman_error_list']:
+			repoman_error = repoman_error + repoman_text
+		NewBuildLogRepoman = BuildLogsRepoman(BuildLogId = log_id, SummeryText = repoman_error)
 		session.add(NewBuildLogRepoman)
 		session.commit()
 
