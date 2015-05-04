@@ -276,7 +276,7 @@ def add_buildlog_main(settings, pkg, trees):
 		log_msg = "Package %s:%s is NOT logged." % (pkg.cpv, pkg.repo,)
 		add_zobcs_logs(session, log_msg, "info", config_id)
 	else:
-		add_repoman_qa(session, build_log_dict)
+		add_repoman_qa(session, build_log_dict, log_id)
 		os.chmod(settings.get("PORTAGE_LOG_FILE"), 0o664)
 		log_msg = "Package: %s:%s is logged." % (pkg.cpv, pkg.repo,)
 		add_zobcs_logs(session, log_msg, "info", config_id)
@@ -298,8 +298,6 @@ def log_fail_queru(session, build_dict, settings):
 		sum_build_log_list = []
 		sum_build_log_list.append("2")
 		error_log_list.append(build_dict['type_fail'])
-		build_log_dict['repoman_error_list'] = False
-		build_log_dict['qa_error_list'] = False
 		build_log_dict['summary_error_list'] = sum_build_log_list
 		if build_dict['type_fail'] == 'merge fail':
 			error_log_list = []

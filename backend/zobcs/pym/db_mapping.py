@@ -216,6 +216,18 @@ class BuildLogsUse(Base):
 	Status = Column('status', Boolean, default=False)
 	__tablename__ = 'build_logs_use'
 
+class BuildLogsQA(Base):
+	Id = Column('id', Integer, primary_key=True)
+	BuildLogId = Column('build_log_id', Integer, ForeignKey('build_logs.build_log_id'))
+	SummeryText = Column('summery_text', Text)
+	__tablename__ = 'build_logs_qa'
+
+class BuildLogsRepoman(Base):
+	Id = Column('id', Integer, primary_key=True)
+	BuildLogId = Column('build_log_id', Integer, ForeignKey('build_logs.build_log_id'))
+	SummeryText = Column('summery_text', Text)
+	__tablename__ = 'build_logs_repoman'
+	
 class ErrorsInfo(Base):
 	ErrorId = Column('error_id', Integer, primary_key=True)
 	ErrorName = Column('error_name', String)

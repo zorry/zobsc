@@ -7,7 +7,7 @@ from zobcs.db_mapping import Configs, Logs, ConfigsMetaData, Jobs, BuildJobs, Pa
 	Uses, ConfigsEmergeOptions, EmergeOptions, HiLight, BuildLogs, BuildLogsConfig, BuildJobsUse, BuildJobsRedo, \
 	HiLightCss, BuildLogsHiLight, BuildLogsEmergeOptions, BuildLogsErrors, ErrorsInfo, EmergeInfo, BuildLogsUse, \
 	BuildJobsEmergeOptions, EbuildsMetadata, EbuildsIUse, Restrictions, EbuildsRestrictions, EbuildsKeywords, \
-        Keywords, PackagesMetadata, Emails, PackagesEmails, Setups
+        Keywords, PackagesMetadata, Emails, PackagesEmails, Setups, 
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy import and_, or_
 
@@ -266,6 +266,17 @@ def add_new_buildlog(session, build_dict, build_log_dict):
 		del_old_build_jobs(session, build_dict['build_job_id'])
 		return build_log_id
 
+def add_repoman_qa(session, build_log_dict, log_id):
+	if build_log_dict['qa_error_list']
+		NewBuildLogQA = BuildLogsQA(BuildJobId = log_id, SummeryText = build_log_dict['qa_error_list'])
+		session.add(NewBuildLogQA)
+		session.commit()
+	if build_log_dict['repoman_error_list']
+		NewBuildLogRepoman = BuildLogsRepoman(BuildJobId = log_id, SummeryText = build_log_dict['repoman_error_list'])
+		session.add(NewBuildLogRepoman)
+		session.commit()
+
+
 def update_fail_times(session, FailInfo):
 	NewBuildJobs = session.query(BuildJobs).filter_by(BuildJobId = FailInfo.BuildJobId).one()
 	NewBuildJobs.TimeStamp = datetime.datetime.utcnow()
@@ -279,7 +290,6 @@ def get_fail_times(session, build_dict):
 	return True
 
 def add_fail_times(session, fail_querue_dict):
-	print(fail_querue_dict)
 	NewBuildJobsRedo = BuildJobsRedo(BuildJobId = fail_querue_dict['build_job_id'], FailType = fail_querue_dict['fail_type'], FailTimes = fail_querue_dict['fail_times'])
 	session.add(NewBuildJobsRedo)
 	session.commit()
