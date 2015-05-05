@@ -80,7 +80,7 @@ def get_build_dict_db(session, config_id, settings, zobcs_settings_dict, pkg):
 			init_package = zobcs_package(session, settings, myportdb, config_id, zobcs_settings_dict)
 			init_package.update_package_db(build_dict['package_id'])
 			ebuild_id_list, status = get_ebuild_id_db(session, build_dict['checksum'], build_dict['package_id'])
-			if status and ebuild_id is None:
+			if status and ebuild_id_list is None:
 				log_msg = "%s:%s Don't have any ebuild_id!" % (pkg.cpv, repo,)
 				add_zobcs_logs(session, log_msg, "error", config_id)
 		else:
