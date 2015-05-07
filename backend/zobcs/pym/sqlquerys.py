@@ -68,16 +68,17 @@ def is_build_job_done(session, build_job_id):
 
 def get_packages_to_build(session, config_id):
 	SetupInfo = get_setup_info(session, config_id)
-	BuildJobsTmp = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.SetupId). \
-				order_by(BuildJobs.BuildJobId)
-	if session.query(BuildJobs).filter_by(SetupId = SetupInfo.SetupId).filter_by(BuildNow = True).filter_by(Status = 'Waiting').all() == [] and session.query(BuildJobs).filter_by(SetupId = SetupInfo.SetupId).filter_by(Status = 'Waiting').all() == []:
+	try:
+		BuildJobsIdTmp = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.SetupId). \
+				order_by(BuildJobs.BuildJobId).filter_by(Status = 'Waiting').all()
+	except NoResultFound as e:
 		return None
-	if not BuildJobsTmp.filter_by(BuildNow = True).first() is None:
-		BuildJobsInfo = session.query(BuildJobs).filter_by(SetupId = SetupInfo.SetupId).filter_by(BuildNow = True). \
-			filter_by(Status = 'Waiting').order_by(BuildJobs.BuildJobId).first()
-	else:
-		BuildJobsInfo = session.query(BuildJobs).filter_by(SetupId = SetupInfo.SetupId).filter_by(Status = 'Waiting').\
-			order_by(BuildJobs.BuildJobId).first()
+	try:
+		BuildJobsIdInfo = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.SetupId). \
+				order_by(BuildJobs.BuildJobId).filter_by(Status = 'Waiting').filter_by(BuildNow = True).first()
+	except NoResultFound as e:
+		BuildJobsIdInfo = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.SetupId). \
+				order_by(BuildJobs.BuildJobId).filter_by(Status = 'Waiting').first()
 	update_buildjobs_status(session, BuildJobsInfo.BuildJobId, 'Looked', config_id)
 	EbuildsInfo = session.query(Ebuilds).filter_by(EbuildId = BuildJobsInfo.EbuildId).one()
 	PackagesInfo, CategoriesInfo = session.query(Packages, Categories).filter(Packages.PackageId==EbuildsInfo.PackageId).filter(Packages.CategoryId==Categories.CategoryId).one()
