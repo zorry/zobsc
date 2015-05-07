@@ -69,15 +69,15 @@ def is_build_job_done(session, build_job_id):
 def get_packages_to_build(session, config_id):
 	SetupInfo = get_setup_info(session, config_id)
 	try:
-		BuildJobsIdTmp = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.SetupId). \
+		BuildJobsTmp = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.SetupId). \
 				order_by(BuildJobs.BuildJobId).filter_by(Status = 'Waiting').all()
 	except NoResultFound as e:
 		return None
 	try:
-		BuildJobsIdInfo = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.SetupId). \
+		BuildJobsInfo = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.SetupId). \
 				order_by(BuildJobs.BuildJobId).filter_by(Status = 'Waiting').filter_by(BuildNow = True).first()
 	except NoResultFound as e:
-		BuildJobsIdInfo = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.SetupId). \
+		BuildJobsInfo = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.SetupId). \
 				order_by(BuildJobs.BuildJobId).filter_by(Status = 'Waiting').first()
 	update_buildjobs_status(session, BuildJobsInfo.BuildJobId, 'Looked', config_id)
 	EbuildsInfo = session.query(Ebuilds).filter_by(EbuildId = BuildJobsInfo.EbuildId).one()
