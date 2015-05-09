@@ -60,7 +60,7 @@ def git_repo_sync_main(session):
 	except:
 		pass
 	print("git sync")
-	git_repos_list(session, mysettings, myportdb):
+	git_repos_list(session, mysettings, myportdb)
 	repo_cp_dict = {}
 	attr = {}
 	search_line ="Manifest"
