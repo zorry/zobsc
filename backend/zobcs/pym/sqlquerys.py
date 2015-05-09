@@ -70,10 +70,9 @@ def get_packages_to_build(session, config_id):
 	SetupInfo = get_setup_info(session, config_id)
 	BuildJobsTmp = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.SetupId). \
 		order_by(BuildJobs.BuildJobId).filter_by(Status = 'Waiting')
-	if BuildJobsTmp.all() != []:
-	else:
+	if BuildJobsTmp.all() == []:
 		return None
-	if BuildJobsTmp.filter_by(BuildNow = True).all() != []:
+	elif BuildJobsTmp.filter_by(BuildNow = True).all() != []:
 		BuildJobsInfo = BuildJobsTmp.filter_by(BuildNow = True).first()
 	elif BuildJobsTmp.filter_by(BuildNow = False).all() != []:
 		BuildJobsInfo = BuildJobsTmp.filter_by(BuildNow = False).first()
