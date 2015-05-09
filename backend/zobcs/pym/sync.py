@@ -64,7 +64,7 @@ def git_repo_sync_main(session):
 	repo_cp_dict = {}
 	attr = {}
 	search_line ="Manifest"
-	for repo_dir in git_repos_list(session, mysettings, myportdb)
+	for repo_dir in git_repos_list(session, mysettings, myportdb):
 		repo = git_fetch(session, repo_dir , config_id):
 		repo_diff = git_diff(session, repo, config_id)
 		print(repo_diff)
