@@ -68,17 +68,19 @@ def is_build_job_done(session, build_job_id):
 
 def get_packages_to_build(session, config_id):
 	SetupInfo = get_setup_info(session, config_id)
-	try:
-		BuildJobsTmp = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.SetupId). \
-				order_by(BuildJobs.BuildJobId).filter_by(Status = 'Waiting').all()
-	except NoResultFound as e:
+	BuildJobsTmp = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.SetupId). \
+		order_by(BuildJobs.BuildJobId).filter_by(Status = 'Waiting')
+	if BuildJobsTmp.all() != []:
+	else:
 		return None
-	try:
-		BuildJobsInfo = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.SetupId). \
-				order_by(BuildJobs.BuildJobId).filter_by(Status = 'Waiting').filter_by(BuildNow = True).first()
-	except NoResultFound as e:
-		BuildJobsInfo = session.query(BuildJobs).filter(BuildJobs.SetupId==SetupInfo.SetupId). \
-				order_by(BuildJobs.BuildJobId).filter_by(Status = 'Waiting').first()
+	if BuildJobsTmp.filter_by(BuildNow = True).all() != []:
+		BuildJobsInfo = BuildJobsTmp.filter_by(BuildNow = True).first()
+	elif BuildJobsTmp.filter_by(BuildNow = False).all() != []:
+		BuildJobsInfo = BuildJobsTmp.filter_by(BuildNow = False).first()
+	else:
+		log_msg = "BuildJobsTmp found job but the if state mant did not."
+		add_zobcs_logs(session, log_msg, "error", config_id)
+		return None
 	update_buildjobs_status(session, BuildJobsInfo.BuildJobId, 'Looked', config_id)
 	EbuildsInfo = session.query(Ebuilds).filter_by(EbuildId = BuildJobsInfo.EbuildId).one()
 	PackagesInfo, CategoriesInfo = session.query(Packages, Categories).filter(Packages.PackageId==EbuildsInfo.PackageId).filter(Packages.CategoryId==Categories.CategoryId).one()
