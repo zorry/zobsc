@@ -7,15 +7,29 @@ import os
 import errno
 import sys
 import time
+import re
 from pygit2 import Repository, GIT_MERGE_ANALYSIS_FASTFORWARD, GIT_MERGE_ANALYSIS_NORMAL, \
         GIT_MERGE_ANALYSIS_UP_TO_DATE
 
 from _emerge.main import emerge_main
-from zobcs.readconf import get_conf_settings
 from zobcs.sqlquerys import get_config_id, add_zobcs_logs, get_config_all_info, get_configmetadata_info
 from zobcs.readconf import read_config_settings
 
-def sync_tree(session):
+def git_repos_list(session, mysettings, myportdb):
+	repo_trees_list = myportdb.porttrees
+	for repo_dir in repo_trees_list:
+		repo_name = myportdb.getRepositoryName(repo_dir)
+		repo_dir_list = []
+		repo_dir_list.append(repo_dir)
+	return repo_dir_list
+
+def git_diff(session, repo, config_id):
+	t0=repo.revparse_single('HEAD')
+	t1=repo.revparse_single('HEAD^')
+	out=repo.diff(t0,t1)
+	return out.patch
+
+def git_repo_sync_main(session):
 	zobcs_settings_dict = read_config_settings()
 	_hostname = zobcs_settings_dict['hostname']
 	_config = zobcs_settings_dict['zobcs_config']
@@ -23,6 +37,7 @@ def sync_tree(session):
 	host_config = _hostname +"/" + _config
 	default_config_root = "/var/cache/zobcs/" + zobcs_settings_dict['zobcs_gitreponame'] + "/" + host_config + "/"
 	mysettings = portage.config(config_root = default_config_root)
+	myportdb = portage.portdbapi(mysettings=mysettings)
 	GuestBusy = True
 	log_msg = "Waiting for Guest to be idel"
 	add_zobcs_logs(session, log_msg, "info", config_id)
@@ -37,43 +52,50 @@ def sync_tree(session):
 			Status_list.append(ConfigMetadata.Status)
 		if not 'Runing' in Status_list:
 			GuestBusy = False
-		time.sleep(30)
+		else:
+			time.sleep(30)
 	try:
 		os.remove(mysettings['PORTDIR'] + "/profiles/config/parent")
 		os.rmdir(mysettings['PORTDIR'] + "/profiles/config")
 	except:
 		pass
-	tmpcmdline = []
-	tmpcmdline.append("--sync")
-	tmpcmdline.append("--quiet")
-	tmpcmdline.append("--config-root=" + default_config_root)
-	log_msg = "Emerge --sync"
+	print("git sync")
+	git_repos_list(session, mysettings, myportdb):
+	repo_cp_dict = {}
+	attr = {}
+	search_line ="Manifest"
+	for repo_dir in git_repos_list(session, mysettings, myportdb)
+		repo = git_fetch(session, repo_dir , config_id):
+		repo_diff = git_diff(session, repo, config_id)
+		print(repo_diff)
+		manifest_diff_list = []
+		for diff_line in repo_diff..readlines():
+			print(diff_lines)
+			if re.search(search_line, diff_lines):
+				manifest_diff_list.append(diff_line)
+		git_merge(session, repo, config_id)
+		print(manifest_diff_list)
+	# Need to add a config dir so we can use profiles/base for reading the tree.
+	# We may allready have the dir on local repo when we sync.
+	try:
+		os.mkdir(mysettings['PORTDIR'] + "/profiles/config", 0o777)
+		with open(mysettings['PORTDIR'] + "/profiles/config/parent", "w") as f:
+			f.write("../base\n")
+			f.close()
+	except:
+		pass
+	log_msg = "Repo sync ... Done."
 	add_zobcs_logs(session, log_msg, "info", config_id)
-	fail_sync = emerge_main(args=tmpcmdline)
-	if fail_sync:
-		log_msg = "Emerge --sync fail!"
-		add_zobcs_logs(session, log_msg, "error", config_id)
-		return False
-	else:
-		# Need to add a config dir so we can use profiles/base for reading the tree.
-		# We may allready have the dir on local repo when we sync.
-		try:
-			os.mkdir(mysettings['PORTDIR'] + "/profiles/config", 0o777)
-			with open(mysettings['PORTDIR'] + "/profiles/config/parent", "w") as f:
-				f.write("../base\n")
-				f.close()
-		except:
-			pass
-		log_msg = "Emerge --sync ... Done."
-		add_zobcs_logs(session, log_msg, "info", config_id)
+	sys.exit()
 	return True
 
-def git_pull(session, git_repo, config_id):
-	log_msg = "Git pull"
-	add_zobcs_logs(session, log_msg, "info", config_id)
+def git_fetch(session, git_repo, config_id):
 	repo = Repository(git_repo + ".git")
 	remote = repo.remotes["origin"]
 	remote.fetch()
+	return repo
+
+def git_merge(session, repo, config_id):
 	remote_master_id = repo.lookup_reference('refs/remotes/origin/master').target
 	merge_result, _ = repo.merge_analysis(remote_master_id)
 	if merge_result & GIT_MERGE_ANALYSIS_UP_TO_DATE:
@@ -98,6 +120,12 @@ def git_pull(session, git_repo, config_id):
 		repo.state_cleanup()
 	else:
 		raise AssertionError('Unknown merge analysis result')
+
+def git_pull(session, git_repo, config_id):
+	log_msg = "Git pull"
+	add_zobcs_logs(session, log_msg, "info", config_id)
+	reop = git_fetch(session, git_repo, config_id)
+	git_merge(session, repo, config_id)
 	log_msg = "Git pull ... Done"
 	add_zobcs_logs(session, log_msg, "info", config_id)
 	return True
