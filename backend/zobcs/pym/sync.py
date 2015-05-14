@@ -59,22 +59,33 @@ def git_repo_sync_main(session):
 		os.rmdir(mysettings['PORTDIR'] + "/profiles/config")
 	except:
 		pass
-	print("git sync")
 	git_repos_list(session, mysettings, myportdb)
 	repo_cp_dict = {}
-	attr = {}
-	search_line ="Manifest"
 	for repo_dir in git_repos_list(session, mysettings, myportdb):
-		repo = git_fetch(session, repo_dir , config_id):
-		repo_diff = git_diff(session, repo, config_id)
-		print(repo_diff)
-		manifest_diff_list = []
-		for diff_line in repo_diff..readlines():
-			print(diff_lines)
-			if re.search(search_line, diff_lines):
-				manifest_diff_list.append(diff_line)
-		git_merge(session, repo, config_id)
-		print(manifest_diff_list)
+		attr = {}
+		repo = git_fetch(session, repo_dir, config_id)
+		remote_master_id = repo.lookup_reference('refs/remotes/origin/master').target
+		merge_result, _ = repo.merge_analysis(remote_master_id)
+		if not merge_result & GIT_MERGE_ANALYSIS_UP_TO_DATE:
+			git_merge(session, repo, config_id)
+			out=repo.diff('HEAD', 'HEAD^')
+			repo_diff = out.patch
+			cp_list = []
+			reponame = myportdb.getRepositoryName(repo_dir)
+			for diff_line in repo_diff.splitlines():
+				if re.search("Manifest", diff_line) and re.search("^diff --git", diff_line):
+					diff_line2 = re.split(' ', re.sub('[a-b]/', '', re.sub('diff --git ', '', diff_line)))
+					if diff_line2[0] == diff_line2[1] or "Manifest" in diff_line2[0]:
+						cp = re.sub('/Manifest', '', diff_line2[0])
+						cp_list.append(cp)
+					else:
+						cp = re.sub('/Manifest', '', diff_line2[1])
+						cp_list.append(cp)
+			attr['cp_list'] = cp_list
+			repo_cp_dict[reponame] = attr
+		else:
+			log_msg = "Repo is up to date"
+			add_zobcs_logs(session, log_msg, "info", config_id)
 	# Need to add a config dir so we can use profiles/base for reading the tree.
 	# We may allready have the dir on local repo when we sync.
 	try:
@@ -86,11 +97,10 @@ def git_repo_sync_main(session):
 		pass
 	log_msg = "Repo sync ... Done."
 	add_zobcs_logs(session, log_msg, "info", config_id)
-	sys.exit()
-	return True
+	return repo_cp_dict
 
 def git_fetch(session, git_repo, config_id):
-	repo = Repository(git_repo + ".git")
+	repo = Repository(git_repo)
 	remote = repo.remotes["origin"]
 	remote.fetch()
 	return repo

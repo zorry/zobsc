@@ -227,7 +227,7 @@ class BuildLogsRepoman(Base):
 	BuildLogId = Column('build_log_id', Integer, ForeignKey('build_logs.build_log_id'))
 	SummeryText = Column('summery_text', Text)
 	__tablename__ = 'build_logs_repoman'
-	
+
 class ErrorsInfo(Base):
 	ErrorId = Column('error_id', Integer, primary_key=True)
 	ErrorName = Column('error_name', String)

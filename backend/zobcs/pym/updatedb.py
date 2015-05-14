@@ -15,7 +15,7 @@ from zobcs.sqlquerys import add_zobcs_logs, get_package_info, update_repo_db, \
 from zobcs.check_setup import check_make_conf
 from zobcs.package import zobcs_package
 # Get the options from the config file set in zobcs.readconf
-from zobcs.readconf import get_conf_settings
+from zobcs.readconf import  read_config_settings
 
 def init_portage_settings(session, config_id, zobcs_settings_dict):
 	# check config setup
@@ -57,7 +57,7 @@ def update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, conf
 		init_package.add_new_package_db(cp, repo)
 	Session.remove()
 
-def update_cpv_db(session, config_id, zobcs_settings_dict):
+def update_cpv_db(session, repo_cp_dict, config_id, zobcs_settings_dict):
 	GuestBusy = True
 	log_msg = "Waiting for Guest to be idel"
 	add_zobcs_logs(session, log_msg, "info", config_id)
@@ -79,57 +79,67 @@ def update_cpv_db(session, config_id, zobcs_settings_dict):
 	add_zobcs_logs(session, log_msg, "info", config_id)
 	new_build_jobs_list = []
 
-	# Setup portdb, package
+	# Setup portdb, package pool
 	myportdb = portage.portdbapi(mysettings=mysettings)
-	repo_list = ()
-	repos_trees_list = []
 
 	# Use all cores when multiprocessing
-	pool_cores= multiprocessing.cpu_count()
-	pool = multiprocessing.Pool(processes=pool_cores)
+	pool_cores = multiprocessing.cpu_count()
+	pool = multiprocessing.Pool(processes = pool_cores)
 
-	# Will run some update checks and update package if needed
+	if repo_cp_dict is None:
+		repo_list = []
+		repos_trees_list = []
 
-	# Get the repos and update the repos db
-	repo_list = myportdb.getRepositories()
-	update_repo_db(session, repo_list)
+		# Get the repos and update the repos db
+		repo_list = myportdb.getRepositories()
+		update_repo_db(session, repo_list)
 
-	# Close the db for the multiprocessing pool will make new ones
-	# and we don't need this one for some time.
+		# Get the rootdirs for the repos
+		repo_trees_list = myportdb.porttrees
+		for repo_dir in repo_trees_list:
+			repo = myportdb.getRepositoryName(repo_dir)
+			repo_dir_list = []
+			repo_dir_list.append(repo_dir)
 
-	# Get the rootdirs for the repos
-	repo_trees_list = myportdb.porttrees
-	for repo_dir in repo_trees_list:
-		repo = myportdb.getRepositoryName(repo_dir)
-		repo_dir_list = []
-		repo_dir_list.append(repo_dir)
+			# Get the package list from the repo
+			package_list_tree = myportdb.cp_all(trees=repo_dir_list)
 
-		# Get the package list from the repo
-		package_list_tree = myportdb.cp_all(trees=repo_dir_list)
+			# Run the update package for all package in the list and in a multiprocessing pool
+			for cp in sorted(package_list_tree):
+				pool.apply_async(update_cpv_db_pool, (mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id,))
+				# use this when debuging
+				#update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id)
+	else:
+		for repo, v in repo_cp_dict.items():
+			# Get the repos and update the repos db
+			repo_list = []
+			repo_list.append(repo)
+			update_repo_db(session, repo_list)
 
-		# Run the update package for all package in the list and in a multiprocessing pool
-		for cp in sorted(package_list_tree):
-			pool.apply_async(update_cpv_db_pool, (mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id,))
-			# use this when debuging
-			#update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id)
+			# Run the update package for all package in the list and in a multiprocessing pool
+			for cp in v['cp_list']:
+				pool.apply_async(update_cpv_db_pool, (mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id,))
+				# use this when debuging
+				#update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id)
 
 	#close and join the multiprocessing pools
 	pool.close()
 	pool.join()
+
 	log_msg = "Checking categories, package and ebuilds ... done"
 	add_zobcs_logs(session, log_msg, "info", config_id)
 
-def update_db_main(session, config_id):
+def update_db_main(session, repo_cp_dict, config_id):
 	# Main
-
+	if repo_cp_dict == {}:
+                return True
 	# Logging
-	reader = get_conf_settings()
-	zobcs_settings_dict=reader.read_zobcs_settings_all()
+	zobcs_settings_dict = read_config_settings()
 	log_msg = "Update db started."
 	add_zobcs_logs(session, log_msg, "info", config_id)
 
 	# Update the cpv db
-	update_cpv_db(session, config_id, zobcs_settings_dict)
+	update_cpv_db(session, repo_cp_dict, config_id, zobcs_settings_dict)
 	log_msg = "Update db ... Done."
 	add_zobcs_logs(session, log_msg, "info", config_id)
 	return True

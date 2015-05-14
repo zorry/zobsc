@@ -284,7 +284,6 @@ def add_repoman_qa(session, build_log_dict, log_id):
 		session.add(NewBuildLogRepoman)
 		session.commit()
 
-
 def update_fail_times(session, FailInfo):
 	NewBuildJobs = session.query(BuildJobs).filter_by(BuildJobId = FailInfo.BuildJobId).one()
 	NewBuildJobs.TimeStamp = datetime.datetime.utcnow()
