@@ -238,6 +238,7 @@ class zobcs_package(object):
 			add_zobcs_logs(self._session, fail_msg, "error", self._config_id)
 			log_msg = "C %s:%s ... Fail." % (cp, repo)
 			add_zobcs_logs(self._session, log_msg, "error", self._config_id)
+			return "0"
 		return manifest_checksum_tree
 
 	def add_new_package_db(self, cp, repo):
@@ -304,7 +305,7 @@ class zobcs_package(object):
 				if manifest_checksum_tree == "0":
 					old_ebuild_id_list = get_ebuild_id_list(session, package_id)
 					for ebuild_id in ebuild_id_list:
-						EbuildInfo = get_ebuild_info_ebuild_id(session, ebuild_id):
+						EbuildInfo = get_ebuild_info_ebuild_id(session, ebuild_id)
 						cpv = cp + "-" + EbuildInfo.Version
 						# D =  remove ebuild
 						log_msg = "R %s:%s" % (cpv, repo,)
