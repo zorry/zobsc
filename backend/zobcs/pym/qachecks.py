@@ -164,6 +164,6 @@ def check_repoman(mysettings, myportdb, cpv, repo):
 			# A file.UTF8 failure will have already been recorded above.
 			pass
 		# fails will have a list with repoman errors
-		if fails = []:
+		if fails == []:
 			return False
 		return fails

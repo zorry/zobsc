@@ -272,7 +272,7 @@ class zobcs_package(object):
 		old_ebuild_id_list = []
 		for cpv in sorted(ebuild_list_tree):
 			packageDict[cpv] = self.get_packageDict(pkgdir, cpv, repo)
-			repoman_fail = check_repoman(self._mysettings, self._myportdb, cpv, repo):
+			repoman_fail = check_repoman(self._mysettings, self._myportdb, cpv, repo)
 			if repoman_fail:
 				log_msg = "Repoman %s:%s ... Fail." % (cpv, repo)
 				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
@@ -352,7 +352,7 @@ class zobcs_package(object):
 					ebuild_version_manifest_checksum_db = checksums_db
 
 				if ebuild_version_manifest_checksum_db is None or ebuild_version_checksum_tree != ebuild_version_manifest_checksum_db:
-					repoman_fail = check_repoman(self._mysettings, self._myportdb, cpv, repo):
+					repoman_fail = check_repoman(self._mysettings, self._myportdb, cpv, repo)
 					if repoman_fail:
 						log_msg = "Repoman %s:%s ... Fail." % (cpv, repo)
 						add_zobcs_logs(self._session, log_msg, "info", self._config_id)
