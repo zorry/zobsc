@@ -7,7 +7,7 @@ from portage.xml.metadata import MetaDataXML
 from zobcs.flags import zobcs_use_flags
 from zobcs.text import get_ebuild_cvs_revision
 from zobcs.flags import zobcs_use_flags
-from zobcs.qachecks import digestcheck
+from zobcs.qachecks import digestcheck, check_repoman
 from zobcs.sqlquerys import add_zobcs_logs, get_package_info, get_config_info, \
 	add_new_build_job, add_new_ebuild_sql, get_ebuild_id_list, add_old_ebuild, \
 	get_package_metadata_sql, update_package_metadata, update_manifest_sql, \
@@ -272,7 +272,10 @@ class zobcs_package(object):
 		old_ebuild_id_list = []
 		for cpv in sorted(ebuild_list_tree):
 			packageDict[cpv] = self.get_packageDict(pkgdir, cpv, repo)
-
+			repoman_fail = check_repoman(self._mysettings, self._myportdb, cpv, repo):
+			if repoman_fail:
+				log_msg = "Repoman %s:%s ... Fail." % (cpv, repo)
+				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 		self.add_package(packageDict, package_metadataDict, package_id, new_ebuild_id_list, old_ebuild_id_list, manifest_checksum_tree)
 		log_msg = "C %s:%s ... Done." % (cp, repo)
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
@@ -307,7 +310,7 @@ class zobcs_package(object):
 					for ebuild_id in ebuild_id_list:
 						EbuildInfo = get_ebuild_info_ebuild_id(session, ebuild_id)
 						cpv = cp + "-" + EbuildInfo.Version
-						# D =  remove ebuild
+						# R =  remove ebuild
 						log_msg = "R %s:%s" % (cpv, repo,)
 						add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 					add_old_ebuild(session, old_ebuild_list)
@@ -348,6 +351,11 @@ class zobcs_package(object):
 				else:
 					ebuild_version_manifest_checksum_db = checksums_db
 
+				if ebuild_version_manifest_checksum_db is None or ebuild_version_checksum_tree != ebuild_version_manifest_checksum_db:
+					repoman_fail = check_repoman(self._mysettings, self._myportdb, cpv, repo):
+					if repoman_fail:
+						log_msg = "Repoman %s:%s ... Fail." % (cpv, repo)
+						add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 				# Check if the checksum have change
 				if ebuild_version_manifest_checksum_db is None:
 					# N = New ebuild
