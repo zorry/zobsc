@@ -5,9 +5,9 @@ from __future__ import print_function
 import portage
 from portage.xml.metadata import MetaDataXML
 from zobcs.flags import zobcs_use_flags
-from zobcs.manifest import zobcs_manifest
 from zobcs.text import get_ebuild_cvs_revision
 from zobcs.flags import zobcs_use_flags
+from zobcs.qachecks import digestcheck
 from zobcs.sqlquerys import add_zobcs_logs, get_package_info, get_config_info, \
 	add_new_build_job, add_new_ebuild_sql, get_ebuild_id_list, add_old_ebuild, \
 	get_package_metadata_sql, update_package_metadata, update_manifest_sql, \
@@ -219,6 +219,26 @@ class zobcs_package(object):
 		# Add the ebuild to the build jobs table if needed
 		self.add_new_build_job_db(ebuild_id_list, packageDict, config_cpv_listDict)
 
+	def get_manifest_checksum_tree(self, pkgdir):
+
+		# Get the cp manifest file checksum.
+		try:
+			manifest_checksum_tree = portage.checksum.sha256hash(pkgdir + "/Manifest")[0]
+		except:
+			manifest_checksum_tree = "0"
+			log_msg = "QA: Can't checksum the Manifest file. :%s:%s" % (cp, repo,)
+			add_zobcs_logs(self._session, log_msg, "error", self._config_id)
+			log_msg = "C %s:%s ... Fail." % (cp, repo)
+			add_zobcs_logs(self._session, log_msg, "error", self._config_id)
+		fail_msg = digestcheck(self._mysettings, pkgdir)
+		if fail_msg:
+			log_msg = "QA: Manifest file has errors. :%s:%s" % (cp, repo,)
+			add_zobcs_logs(self._session, log_msg, "error", self._config_id)
+			add_zobcs_logs(self._session, fail_msg, "error", self._config_id)
+			log_msg = "C %s:%s ... Fail." % (cp, repo)
+			add_zobcs_logs(self._session, log_msg, "error", self._config_id)
+		return manifest_checksum_tree
+
 	def add_new_package_db(self, cp, repo):
 		# Add new categories package ebuild to tables package and ebuilds
 		# C = Checking
@@ -229,17 +249,7 @@ class zobcs_package(object):
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 		repodir = self._myportdb.getRepositoryPath(repo)
 		pkgdir = repodir + "/" + cp # Get RepoDIR + cp
-
-		# Get the cp manifest file checksum.
-		try:
-			manifest_checksum_tree = portage.checksum.sha256hash(pkgdir + "/Manifest")[0]
-		except:
-			manifest_checksum_tree = "0"
-			log_msg = "QA: Can't checksum the Manifest file. :%s:%s" % (cp, repo,)
-			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-			log_msg = "C %s:%s ... Fail." % (cp, repo)
-			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-			return None
+		manifest_checksum_tree = get_manifest_checksum_tree(self, pkgdir)
 		package_id = add_new_package_sql(self._session, cp, repo)
 		
 		package_metadataDict = self.get_package_metadataDict(pkgdir, package_id)
@@ -275,17 +285,7 @@ class zobcs_package(object):
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 		repodir = self._myportdb.getRepositoryPath(repo)
 		pkgdir = repodir + "/" + cp # Get RepoDIR + cp
-
-		# Get the cp mainfest file checksum
-		try:
-			manifest_checksum_tree = portage.checksum.sha256hash(pkgdir + "/Manifest")[0]
-		except:
-			manifest_checksum_tree = "0"
-			log_msg = "QA: Can't checksum the Manifest file. %s:%s" % (cp, repo,)
-			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-			log_msg = "C %s:%s ... Fail." % (cp, repo)
-			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-			return None
+		manifest_checksum_tree = get_manifest_checksum_tree(self, pkgdir)
 
 		# if we NOT have the same checksum in the db update the package
 		if manifest_checksum_tree != PackageInfo.Checksum:
@@ -317,7 +317,7 @@ class zobcs_package(object):
 
 				# Get the checksum of the ebuild in tree and db
 				ebuild_version_checksum_tree = packageDict[cpv]['checksum']
-				checksums_db, fail= get_ebuild_checksums(self._session, package_id, ebuild_version_tree)
+				checksums_db, fail = get_ebuild_checksums(self._session, package_id, ebuild_version_tree)
 				# check if we have dupes of the checksum from db
 				if checksums_db is None:
 					ebuild_version_manifest_checksum_db = None
