@@ -17,8 +17,8 @@ from zobcs.readconf import read_config_settings
 
 def git_repos_list(session, mysettings, myportdb):
 	repo_trees_list = myportdb.porttrees
+	repo_dir_list = []
 	for repo_dir in repo_trees_list:
-		repo_dir_list = []
 		repo_dir_list.append(repo_dir)
 	return repo_dir_list
 
@@ -84,7 +84,7 @@ def git_repo_sync_main(session):
 		os.rmdir(mysettings['PORTDIR'] + "/profiles/config")
 	except:
 		pass
-	git_repos_list(session, mysettings, myportdb)
+
 	repo_cp_dict = {}
 	for repo_dir in git_repos_list(session, mysettings, myportdb):
 		attr = {}
