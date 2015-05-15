@@ -12,7 +12,8 @@ from zobcs.sqlquerys import add_zobcs_logs, get_package_info, get_config_info, \
 	add_new_build_job, add_new_ebuild_sql, get_ebuild_id_list, add_old_ebuild, \
 	get_package_metadata_sql, update_package_metadata, update_manifest_sql, \
 	get_package_info_from_package_id, get_config_all_info, add_new_package_sql, \
-	get_ebuild_checksums, get_ebuild_id_db, get_configmetadata_info, get_setup_info
+	get_ebuild_checksums, get_ebuild_id_db, get_configmetadata_info, get_setup_info, \
+	get_ebuild_info_ebuild_id
 from zobcs.readconf import get_conf_settings
 
 class zobcs_package(object):
@@ -225,11 +226,11 @@ class zobcs_package(object):
 		try:
 			manifest_checksum_tree = portage.checksum.sha256hash(pkgdir + "/Manifest")[0]
 		except:
-			manifest_checksum_tree = "0"
 			log_msg = "QA: Can't checksum the Manifest file. :%s:%s" % (cp, repo,)
 			add_zobcs_logs(self._session, log_msg, "error", self._config_id)
 			log_msg = "C %s:%s ... Fail." % (cp, repo)
 			add_zobcs_logs(self._session, log_msg, "error", self._config_id)
+			return "0"
 		fail_msg = digestcheck(self._mysettings, pkgdir)
 		if fail_msg:
 			log_msg = "QA: Manifest file has errors. :%s:%s" % (cp, repo,)
@@ -296,17 +297,29 @@ class zobcs_package(object):
 
 			# Get the ebuild list for cp
 			mytree = []
+			old_ebuild_id_list = []
 			mytree.append(repodir)
 			ebuild_list_tree = self._myportdb.cp_list(cp, use_cache=1, mytree=mytree)
 			if ebuild_list_tree == []:
-				log_msg = "QA: Can't get the ebuilds list. %s:%s" % (cp, repo,)
-				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-				log_msg = "C %s:%s ... Fail." % (cp, repo)
-				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-				return None
+				if manifest_checksum_tree == "0":
+					old_ebuild_id_list = get_ebuild_id_list(session, package_id)
+					for ebuild_id in ebuild_id_list:
+						EbuildInfo = get_ebuild_info_ebuild_id(session, ebuild_id):
+						cpv = cp + "-" + EbuildInfo.Version
+						# D =  remove ebuild
+						log_msg = "R %s:%s" % (cpv, repo,)
+						add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+					add_old_ebuild(session, old_ebuild_list)
+					log_msg = "C %s:%s ... Done." % (cp, repo)
+					add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+				else:
+					log_msg = "QA: Can't get the ebuilds list. %s:%s" % (cp, repo,)
+					add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+					log_msg = "C %s:%s ... Fail." % (cp, repo)
+					add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+				return
 			packageDict ={}
 			new_ebuild_id_list = []
-			old_ebuild_id_list = []
 			for cpv in sorted(ebuild_list_tree):
 
 				# split out ebuild version
