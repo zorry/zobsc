@@ -18,16 +18,41 @@ from zobcs.readconf import read_config_settings
 def git_repos_list(session, mysettings, myportdb):
 	repo_trees_list = myportdb.porttrees
 	for repo_dir in repo_trees_list:
-		repo_name = myportdb.getRepositoryName(repo_dir)
 		repo_dir_list = []
 		repo_dir_list.append(repo_dir)
 	return repo_dir_list
 
-def git_diff(session, repo, config_id):
-	t0=repo.revparse_single('HEAD')
-	t1=repo.revparse_single('HEAD^')
-	out=repo.diff(t0,t1)
-	return out.patch
+def git_fetch(session, git_repo, config_id):
+	repo = Repository(git_repo)
+	remote = repo.remotes["origin"]
+	remote.fetch()
+	return repo
+
+def git_merge(session, repo, config_id):
+	remote_master_id = repo.lookup_reference('refs/remotes/origin/master').target
+	merge_result, _ = repo.merge_analysis(remote_master_id)
+	if merge_result & GIT_MERGE_ANALYSIS_UP_TO_DATE:
+		log_msg = "Repo is up to date"
+		add_zobcs_logs(session, log_msg, "info", config_id)
+	elif merge_result & GIT_MERGE_ANALYSIS_FASTFORWARD:
+		repo.checkout_tree(repo.get(remote_master_id))
+		master_ref = repo.lookup_reference('refs/heads/master')
+		master_ref.set_target(remote_master_id)
+		repo.head.set_target(remote_master_id)
+	elif merge_result & GIT_MERGE_ANALYSIS_NORMAL:
+		repo.merge(remote_master_id)
+		assert repo.index.conflicts is None, 'Conflicts, ahhhh!'
+		user = repo.default_signature
+		tree = repo.index.write_tree()
+		commit = repo.create_commit('HEAD',
+			user,
+			user,
+			'Merge!',
+			tree,
+			[repo.head.target, remote_master_id])
+		repo.state_cleanup()
+	else:
+		raise AssertionError('Unknown merge analysis result')
 
 def git_repo_sync_main(session):
 	zobcs_settings_dict = read_config_settings()
@@ -68,11 +93,10 @@ def git_repo_sync_main(session):
 		merge_result, _ = repo.merge_analysis(remote_master_id)
 		if not merge_result & GIT_MERGE_ANALYSIS_UP_TO_DATE:
 			git_merge(session, repo, config_id)
-			out=repo.diff('HEAD', 'HEAD^')
-			repo_diff = out.patch
+			repo_diff = repo.diff('HEAD', 'HEAD^')
 			cp_list = []
 			reponame = myportdb.getRepositoryName(repo_dir)
-			for diff_line in repo_diff.splitlines():
+			for diff_line in repo_diff.patch.splitlines():
 				if re.search("Manifest", diff_line) and re.search("^diff --git", diff_line):
 					diff_line2 = re.split(' ', re.sub('[a-b]/', '', re.sub('diff --git ', '', diff_line)))
 					if diff_line2[0] == diff_line2[1] or "Manifest" in diff_line2[0]:
@@ -99,42 +123,10 @@ def git_repo_sync_main(session):
 	add_zobcs_logs(session, log_msg, "info", config_id)
 	return repo_cp_dict
 
-def git_fetch(session, git_repo, config_id):
-	repo = Repository(git_repo)
-	remote = repo.remotes["origin"]
-	remote.fetch()
-	return repo
-
-def git_merge(session, repo, config_id):
-	remote_master_id = repo.lookup_reference('refs/remotes/origin/master').target
-	merge_result, _ = repo.merge_analysis(remote_master_id)
-	if merge_result & GIT_MERGE_ANALYSIS_UP_TO_DATE:
-		log_msg = "Repo is up to date"
-		add_zobcs_logs(session, log_msg, "info", config_id)
-	elif merge_result & GIT_MERGE_ANALYSIS_FASTFORWARD:
-		repo.checkout_tree(repo.get(remote_master_id))
-		master_ref = repo.lookup_reference('refs/heads/master')
-		master_ref.set_target(remote_master_id)
-		repo.head.set_target(remote_master_id)
-	elif merge_result & GIT_MERGE_ANALYSIS_NORMAL:
-		repo.merge(remote_master_id)
-		assert repo.index.conflicts is None, 'Conflicts, ahhhh!'
-		user = repo.default_signature
-		tree = repo.index.write_tree()
-		commit = repo.create_commit('HEAD',
-			user,
-			user,
-			'Merge!',
-			tree,
-			[repo.head.target, remote_master_id])
-		repo.state_cleanup()
-	else:
-		raise AssertionError('Unknown merge analysis result')
-
 def git_pull(session, git_repo, config_id):
 	log_msg = "Git pull"
 	add_zobcs_logs(session, log_msg, "info", config_id)
-	reop = git_fetch(session, git_repo, config_id)
+	repo = git_fetch(session, git_repo, config_id)
 	git_merge(session, repo, config_id)
 	log_msg = "Git pull ... Done"
 	add_zobcs_logs(session, log_msg, "info", config_id)
