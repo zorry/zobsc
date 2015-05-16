@@ -220,7 +220,7 @@ class zobcs_package(object):
 		# Add the ebuild to the build jobs table if needed
 		self.add_new_build_job_db(ebuild_id_list, packageDict, config_cpv_listDict)
 
-	def get_manifest_checksum_tree(self, pkgdir):
+	def get_manifest_checksum_tree(self, pkgdir, cp, repo):
 
 		# Get the cp manifest file checksum.
 		try:
@@ -251,7 +251,7 @@ class zobcs_package(object):
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 		repodir = self._myportdb.getRepositoryPath(repo)
 		pkgdir = repodir + "/" + cp # Get RepoDIR + cp
-		manifest_checksum_tree = get_manifest_checksum_tree(self, pkgdir)
+		manifest_checksum_tree = self.get_manifest_checksum_tree(pkgdir, cp, repo)
 		package_id = add_new_package_sql(self._session, cp, repo)
 		
 		package_metadataDict = self.get_package_metadataDict(pkgdir, package_id)
@@ -290,7 +290,7 @@ class zobcs_package(object):
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 		repodir = self._myportdb.getRepositoryPath(repo)
 		pkgdir = repodir + "/" + cp # Get RepoDIR + cp
-		manifest_checksum_tree = get_manifest_checksum_tree(self, pkgdir)
+		manifest_checksum_tree = self.get_manifest_checksum_tree(pkgdir, cp, repo)
 
 		# if we NOT have the same checksum in the db update the package
 		if manifest_checksum_tree != PackageInfo.Checksum:
@@ -306,14 +306,14 @@ class zobcs_package(object):
 			ebuild_list_tree = self._myportdb.cp_list(cp, use_cache=1, mytree=mytree)
 			if ebuild_list_tree == []:
 				if manifest_checksum_tree == "0":
-					old_ebuild_id_list = get_ebuild_id_list(session, package_id)
-					for ebuild_id in ebuild_id_list:
-						EbuildInfo = get_ebuild_info_ebuild_id(session, ebuild_id)
+					old_ebuild_id_list = get_ebuild_id_list(self._session, package_id)
+					for ebuild_id in old_ebuild_id_list:
+						EbuildInfo = get_ebuild_info_ebuild_id(self._session, ebuild_id)
 						cpv = cp + "-" + EbuildInfo.Version
 						# R =  remove ebuild
 						log_msg = "R %s:%s" % (cpv, repo,)
 						add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-					add_old_ebuild(session, old_ebuild_list)
+					add_old_ebuild(session, old_ebuild_id_list)
 					log_msg = "C %s:%s ... Done." % (cp, repo)
 					add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 				else:

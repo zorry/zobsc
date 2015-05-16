@@ -141,7 +141,7 @@ def check_repoman(mysettings, myportdb, cpv, repo):
 		full_path = pkgdir + "/" + package + "-" + ebuild_version_tree + ".ebuild"
 		root = '/'
 		trees = {
-		root : {'porttree' : portage.portagetree(root, settings=self._mysettings)}
+		root : {'porttree' : portage.portagetree(root, settings=mysettings)}
 		}
 		root_config = RootConfig(mysettings, trees[root], None)
 		allvars = set(x for x in portage.auxdbkeys if not x.startswith("UNUSED_"))
