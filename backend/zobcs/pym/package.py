@@ -220,16 +220,19 @@ class zobcs_package(object):
 		# Add the ebuild to the build jobs table if needed
 		self.add_new_build_job_db(ebuild_id_list, packageDict, config_cpv_listDict)
 
-	def get_manifest_checksum_tree(self, pkgdir, cp, repo):
+	def get_manifest_checksum_tree(self, pkgdir, cp, repo, mytree):
 
 		# Get the cp manifest file checksum.
 		try:
 			manifest_checksum_tree = portage.checksum.sha256hash(pkgdir + "/Manifest")[0]
 		except:
-			log_msg = "QA: Can't checksum the Manifest file. :%s:%s" % (cp, repo,)
-			add_zobcs_logs(self._session, log_msg, "error", self._config_id)
-			log_msg = "C %s:%s ... Fail." % (cp, repo)
-			add_zobcs_logs(self._session, log_msg, "error", self._config_id)
+			# Get the package list from the repo
+			package_list_tree =self. _myportdb.cp_all(trees=mytree)
+			if cp in package_list_tree:
+				log_msg = "QA: Can't checksum the Manifest file. :%s:%s" % (cp, repo,)
+				add_zobcs_logs(self._session, log_msg, "error", self._config_id)
+				log_msg = "C %s:%s ... Fail." % (cp, repo)
+				add_zobcs_logs(self._session, log_msg, "error", self._config_id)
 			return "0"
 		fail_msg = digestcheck(self._mysettings, pkgdir)
 		if fail_msg:
@@ -250,14 +253,14 @@ class zobcs_package(object):
 		log_msg = "N %s:%s" % (cp, repo)
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 		repodir = self._myportdb.getRepositoryPath(repo)
+		mytree = []
+		mytree.append(repodir)
 		pkgdir = repodir + "/" + cp # Get RepoDIR + cp
-		manifest_checksum_tree = self.get_manifest_checksum_tree(pkgdir, cp, repo)
+		manifest_checksum_tree = self.get_manifest_checksum_tree(pkgdir, cp, repo, mytree)
 		package_id = add_new_package_sql(self._session, cp, repo)
 		
 		package_metadataDict = self.get_package_metadataDict(pkgdir, package_id)
 		# Get the ebuild list for cp
-		mytree = []
-		mytree.append(repodir)
 		ebuild_list_tree = self._myportdb.cp_list(cp, use_cache=1, mytree=mytree)
 		if ebuild_list_tree == []:
 			log_msg = "QA: Can't get the ebuilds list. %s:%s" % (cp, repo,)
@@ -275,7 +278,7 @@ class zobcs_package(object):
 			repoman_fail = check_repoman(self._mysettings, self._myportdb, cpv, repo)
 			if repoman_fail:
 				log_msg = "Repoman %s:%s ... Fail." % (cpv, repo)
-				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+				add_zobcs_logs(self._session, log_msg, "error", self._config_id)
 		self.add_package(packageDict, package_metadataDict, package_id, new_ebuild_id_list, old_ebuild_id_list, manifest_checksum_tree)
 		log_msg = "C %s:%s ... Done." % (cp, repo)
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
@@ -290,7 +293,9 @@ class zobcs_package(object):
 		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 		repodir = self._myportdb.getRepositoryPath(repo)
 		pkgdir = repodir + "/" + cp # Get RepoDIR + cp
-		manifest_checksum_tree = self.get_manifest_checksum_tree(pkgdir, cp, repo)
+		mytree = []
+		mytree.append(repodir)
+		manifest_checksum_tree = self.get_manifest_checksum_tree(pkgdir, cp, repo, mytree)
 
 		# if we NOT have the same checksum in the db update the package
 		if manifest_checksum_tree != PackageInfo.Checksum:
@@ -300,9 +305,7 @@ class zobcs_package(object):
 			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
 
 			# Get the ebuild list for cp
-			mytree = []
 			old_ebuild_id_list = []
-			mytree.append(repodir)
 			ebuild_list_tree = self._myportdb.cp_list(cp, use_cache=1, mytree=mytree)
 			if ebuild_list_tree == []:
 				if manifest_checksum_tree == "0":
