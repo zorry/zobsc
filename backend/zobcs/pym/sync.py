@@ -98,12 +98,14 @@ def git_repo_sync_main(session):
 			reponame = myportdb.getRepositoryName(repo_dir)
 			for diff_line in repo_diff.patch.splitlines():
 				if re.search("Manifest", diff_line) and re.search("^diff --git", diff_line):
-					diff_line2 = re.split(' ', re.sub('[a-b]/', '', re.sub('diff --git ', '', diff_line)))
-					if diff_line2[0] == diff_line2[1] or "Manifest" in diff_line2[0]:
-						cp = re.sub('/Manifest', '', diff_line2[0])
+					diff_line2 = re.split(' b/', re.sub('diff --git', '', diff_line))
+					diff_line3 = re.sub(' a/', '', diff_line2[0])
+					diff_line4 = diff_line2[1] 
+					if diff_line3 == diff_line4 or "Manifest" in diff_line3:
+						cp = re.sub('/Manifest', '', diff_line3)
 						cp_list.append(cp)
 					else:
-						cp = re.sub('/Manifest', '', diff_line2[1])
+						cp = re.sub('/Manifest', '', diff_line4)
 						cp_list.append(cp)
 			attr['cp_list'] = cp_list
 			repo_cp_dict[reponame] = attr
