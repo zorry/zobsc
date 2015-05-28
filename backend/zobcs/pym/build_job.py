@@ -8,17 +8,17 @@ import re
 import sys
 import signal
 
-from zobcs.manifest import zobcs_manifest
-from zobcs.depclean import do_depclean
-from zobcs.flags import zobcs_use_flags
 from portage import _encodings
 from portage import _unicode_decode
 from portage.versions import cpv_getkey
 from portage.dep import check_required_use
+from zobcs.depclean import do_depclean
+from zobcs.flags import zobcs_use_flags
+from zobcs.qacheck import check_file_in_manifest
 from zobcs.main import emerge_main
 from zobcs.build_log import log_fail_queru
 from zobcs.actions import load_emerge_config
-from zobcs.sqlquerys import add_zobcs_logs, get_packages_to_build, update_buildjobs_status, is_build_job_done
+from zobcs.sqlquerys import add_logs, get_packages_to_build, update_buildjobs_status, is_build_job_done
 
 class build_job_action(object):
 
@@ -32,31 +32,30 @@ class build_job_action(object):
 		package = build_dict['package']
 		cpv = build_dict['cpv']
 		pkgdir = portdb.getRepositoryPath(repo) + "/" + cp
-		init_manifest =  zobcs_manifest(settings, pkgdir)
 		build_use_flags_list = []
 		try:
 			ebuild_version_checksum_tree = portage.checksum.sha256hash(pkgdir + "/" + package + "-" + build_dict['ebuild_version'] + ".ebuild")[0]
 		except:
 			ebuild_version_checksum_tree = None
 		if ebuild_version_checksum_tree == build_dict['checksum']:
-			manifest_error = init_manifest.check_file_in_manifest(portdb, cpv, build_use_flags_list, repo)
+			manifest_error = check_file_in_manifest(pkgdir, settings, portdb, cpv, build_use_flags_list, repo)
 			if manifest_error is None:
 				init_flags = zobcs_use_flags(settings, portdb, cpv)
 				build_use_flags_list = init_flags.comper_useflags(build_dict)
 				log_msg = "build_use_flags_list %s" % (build_use_flags_list,)
-				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
-				manifest_error = init_manifest.check_file_in_manifest(portdb, cpv, build_use_flags_list, repo)
+				add_logs(self._session, log_msg, "info", self._config_id)
+				manifest_error = check_file_in_manifest(pkgdir, settings, portdb, cpv, build_use_flags_list, repo)
 			if manifest_error is None:
 				build_dict['check_fail'] = False
 				build_cpv_dict = {}
 				build_cpv_dict[cpv] = build_use_flags_list
 				log_msg = "build_cpv_dict: %s" % (build_cpv_dict,)
-				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+				add_logs(self._session, log_msg, "info", self._config_id)
 				return build_cpv_dict
 			build_dict['type_fail'] = "Manifest error"
 			build_dict['check_fail'] = True
 			log_msg = "Manifest error: %s:%s" % (cpv, manifest_error)
-			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+			add_logs(self._session, log_msg, "info", self._config_id)
 		else:
 			build_dict['type_fail'] = "Wrong ebuild checksum"
 			build_dict['check_fail'] = True
@@ -75,13 +74,13 @@ class build_job_action(object):
 					build_use_flags = build_use_flags + flags + " "
 				filetext = '=' + k + ' ' + build_use_flags
 				log_msg = "filetext: %s" % filetext
-				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+				add_logs(self._session, log_msg, "info", self._config_id)
 				with open("/etc/portage/package.use/99_autounmask", "a") as f:
      					f.write(filetext)
      					f.write('\n')
      					f.close
 		log_msg = "build_cpv_list: %s" % (build_cpv_list,)
-		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+		add_logs(self._session, log_msg, "info", self._config_id)
 
 		# We remove the binary package if removebin is true
 		if build_dict['removebin']:
@@ -92,7 +91,7 @@ class build_job_action(object):
 				os.remove(binfile)
 			except:
 				log_msg = "Binary file was not removed or found: %s" % (binfile,)
-				add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+				add_logs(self._session, log_msg, "info", self._config_id)
 
 		argscmd = []
 		for emerge_option in build_dict['emerge_options']:
@@ -109,7 +108,7 @@ class build_job_action(object):
 			argscmd.append(build_cpv)
 		print("Emerge options: %s" % argscmd)
 		log_msg = "argscmd: %s" % (argscmd,)
-		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+		add_logs(self._session, log_msg, "info", self._config_id)
 		
 		# Call main_emerge to build the package in build_cpv_list
 		print("Build: %s" % build_dict)
@@ -128,7 +127,7 @@ class build_job_action(object):
 		if is_build_job_done(self._session, build_dict['build_job_id']):
 			update_buildjobs_status(self._session, build_dict['build_job_id'], 'Looked', self._config_id)
 			log_msg = "build_job %s was not removed" % (build_dict['build_job_id'],)
-			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+			add_logs(self._session, log_msg, "info", self._config_id)
 			print("qurery was not removed")
 			build_dict['type_fail'] = "Querey was not removed"
 			build_dict['check_fail'] = True
@@ -137,7 +136,7 @@ class build_job_action(object):
 			build_dict['type_fail'] = "Emerge faild"
 			build_dict['check_fail'] = True
 			log_msg = "Emerge faild!"
-			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+			add_logs(self._session, log_msg, "info", self._config_id)
 			return True
 		return False
 
@@ -148,13 +147,13 @@ class build_job_action(object):
 			return
 		print("build_dict: %s" % (build_dict,))
 		log_msg = "build_dict: %s" % (build_dict,)
-		add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+		add_logs(self._session, log_msg, "info", self._config_id)
 		if not build_dict['ebuild_id'] is None and build_dict['checksum'] is not None:
 			settings, trees, mtimedb = load_emerge_config()
 			portdb = trees[settings["ROOT"]]["porttree"].dbapi
 			buildqueru_cpv_dict = self.make_build_list(build_dict, settings, portdb)
 			log_msg = "buildqueru_cpv_dict: %s" % (buildqueru_cpv_dict,)
-			add_zobcs_logs(self._session, log_msg, "info", self._config_id)
+			add_logs(self._session, log_msg, "info", self._config_id)
 			if buildqueru_cpv_dict is None:
 				return
 			fail_build_procces = self.build_procces(buildqueru_cpv_dict, build_dict, settings, portdb)

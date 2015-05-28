@@ -12,7 +12,7 @@ from pygit2 import Repository, GIT_MERGE_ANALYSIS_FASTFORWARD, GIT_MERGE_ANALYSI
         GIT_MERGE_ANALYSIS_UP_TO_DATE
 
 from _emerge.main import emerge_main
-from zobcs.sqlquerys import get_config_id, add_zobcs_logs, get_config_all_info, get_configmetadata_info
+from zobcs.sqlquerys import get_config_id, add_logs, get_config_all_info, get_configmetadata_info
 from zobcs.readconf import read_config_settings
 
 def git_repos_list(session, mysettings, myportdb):
@@ -33,7 +33,7 @@ def git_merge(session, repo, config_id):
 	merge_result, _ = repo.merge_analysis(remote_master_id)
 	if merge_result & GIT_MERGE_ANALYSIS_UP_TO_DATE:
 		log_msg = "Repo is up to date"
-		add_zobcs_logs(session, log_msg, "info", config_id)
+		add_logs(session, log_msg, "info", config_id)
 	elif merge_result & GIT_MERGE_ANALYSIS_FASTFORWARD:
 		repo.checkout_tree(repo.get(remote_master_id))
 		master_ref = repo.lookup_reference('refs/heads/master')
@@ -65,7 +65,7 @@ def git_repo_sync_main(session):
 	myportdb = portage.portdbapi(mysettings=mysettings)
 	GuestBusy = True
 	log_msg = "Waiting for Guest to be idel"
-	add_zobcs_logs(session, log_msg, "info", config_id)
+	add_logs(session, log_msg, "info", config_id)
 	guestid_list = []
 	for config in get_config_all_info(session):
 		if not config.Host:
@@ -100,18 +100,17 @@ def git_repo_sync_main(session):
 				if re.search("Manifest", diff_line) and re.search("^diff --git", diff_line):
 					diff_line2 = re.split(' b/', re.sub('diff --git', '', diff_line))
 					diff_line3 = re.sub(' a/', '', diff_line2[0])
-					diff_line4 = diff_line2[1] 
-					if diff_line3 == diff_line4 or "Manifest" in diff_line3:
+					if diff_line3 == diff_line2[1] or "Manifest" in diff_line3:
 						cp = re.sub('/Manifest', '', diff_line3)
 						cp_list.append(cp)
 					else:
-						cp = re.sub('/Manifest', '', diff_line4)
+						cp = re.sub('/Manifest', '', diff_line2[1])
 						cp_list.append(cp)
 			attr['cp_list'] = cp_list
 			repo_cp_dict[reponame] = attr
 		else:
 			log_msg = "Repo is up to date"
-			add_zobcs_logs(session, log_msg, "info", config_id)
+			add_logs(session, log_msg, "info", config_id)
 	# Need to add a config dir so we can use profiles/base for reading the tree.
 	# We may allready have the dir on local repo when we sync.
 	try:
@@ -122,14 +121,14 @@ def git_repo_sync_main(session):
 	except:
 		pass
 	log_msg = "Repo sync ... Done."
-	add_zobcs_logs(session, log_msg, "info", config_id)
+	add_logs(session, log_msg, "info", config_id)
 	return repo_cp_dict
 
 def git_pull(session, git_repo, config_id):
 	log_msg = "Git pull"
-	add_zobcs_logs(session, log_msg, "info", config_id)
+	add_logs(session, log_msg, "info", config_id)
 	repo = git_fetch(session, git_repo, config_id)
 	git_merge(session, repo, config_id)
 	log_msg = "Git pull ... Done"
-	add_zobcs_logs(session, log_msg, "info", config_id)
+	add_logs(session, log_msg, "info", config_id)
 	return True

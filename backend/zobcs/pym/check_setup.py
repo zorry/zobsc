@@ -8,12 +8,12 @@ import errno
 
 from portage.exception import DigestException, FileNotFound, ParseError, PermissionDenied
 from zobcs.text import get_file_text
-from zobcs.sqlquerys import get_config_all_info, add_zobcs_logs, get_configmetadata_info, get_setup_info
+from zobcs.sqlquerys import get_config_all_info, add_logs, get_configmetadata_info, get_setup_info
 from zobcs.sync import git_pull
 
 def check_make_conf(session, config_id, zobcs_settings_dict):
 	log_msg = "Checking configs for changes and errors"
-	add_zobcs_logs(session, log_msg, "info", config_id)
+	add_logs(session, log_msg, "info", config_id)
 	git_repo = "/var/cache/zobcs/" + zobcs_settings_dict['zobcs_gitreponame'] + "/"
 	git_pull(session, git_repo, config_id)
 	configsDict = {}
@@ -37,19 +37,19 @@ def check_make_conf(session, config_id, zobcs_settings_dict):
 			ConfigsMetaDataInfo.ConfigErrorText = str(e)
 			ConfigsMetaDataInfo.Active = False
 			log_msg = "%s FAIL!" % (ConfigInfo.Hostname,)
-			add_zobcs_logs(session, log_msg, "info", config_id)
+			add_logs(session, log_msg, "info", config_id)
 			session.commit()
 		else:
 			ConfigsMetaDataInfo.Active = True
 			log_msg = "%s PASS" % (ConfigInfo.Hostname,)
-			add_zobcs_logs(session, log_msg, "info", config_id)
+			add_logs(session, log_msg, "info", config_id)
 			session.commit()
 		if make_conf_checksum_tree != ConfigsMetaDataInfo.Checksum:
 			ConfigsMetaDataInfo.MakeConfText = get_file_text(make_conf_file)
 			ConfigsMetaDataInfo.Checksum = make_conf_checksum_tree
 			session.commit()
 	log_msg = "Checking configs for changes and errors ... Done"
-	add_zobcs_logs(session, log_msg, "info", config_id)
+	add_logs(session, log_msg, "info", config_id)
 
 def check_make_conf_guest(session, zobcs_settings_dict, config_id):
 	git_repo = "/var/cache/zobcs/" + zobcs_settings_dict['zobcs_gitreponame'] + "/"

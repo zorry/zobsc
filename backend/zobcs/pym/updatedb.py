@@ -9,7 +9,7 @@ import time
 import portage
 from sqlalchemy.orm import scoped_session, sessionmaker
 from zobcs.ConnectionManager import NewConnection
-from zobcs.sqlquerys import add_zobcs_logs, get_package_info, update_repo_db, \
+from zobcs.sqlquerys import add_logs, get_package_info, update_repo_db, \
 	update_categories_db, get_configmetadata_info, get_config_all_info, add_new_build_job, \
 	get_config_info
 from zobcs.check_setup import check_make_conf
@@ -21,7 +21,7 @@ def init_portage_settings(session, config_id, zobcs_settings_dict):
 	# check config setup
 	check_make_conf(session, config_id, zobcs_settings_dict)
 	log_msg = "Check configs done"
-	add_zobcs_logs(session, log_msg, "info", config_id)
+	add_logs(session, log_msg, "info", config_id)
 	
 	# Get default config from the configs table  and default_config=1
 	host_config = zobcs_settings_dict['hostname'] +"/" + zobcs_settings_dict['zobcs_config']
@@ -30,7 +30,7 @@ def init_portage_settings(session, config_id, zobcs_settings_dict):
 	# Set config_root (PORTAGE_CONFIGROOT)  to default_config_root
 	mysettings = portage.config(config_root = default_config_root)
 	log_msg = "Setting default config to: %s" % (host_config,)
-	add_zobcs_logs(session, log_msg, "info", config_id)
+	add_logs(session, log_msg, "info", config_id)
 	return mysettings
 
 def update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, config_id):
@@ -60,7 +60,7 @@ def update_cpv_db_pool(mysettings, myportdb, cp, repo, zobcs_settings_dict, conf
 def update_cpv_db(session, repo_cp_dict, config_id, zobcs_settings_dict):
 	GuestBusy = True
 	log_msg = "Waiting for Guest to be idel"
-	add_zobcs_logs(session, log_msg, "info", config_id)
+	add_logs(session, log_msg, "info", config_id)
 	guestid_list = []
 	for config in get_config_all_info(session):
 		if not config.Host:
@@ -76,7 +76,7 @@ def update_cpv_db(session, repo_cp_dict, config_id, zobcs_settings_dict):
 
 	mysettings =  init_portage_settings(session, config_id, zobcs_settings_dict)
 	log_msg = "Checking categories, package, ebuilds"
-	add_zobcs_logs(session, log_msg, "info", config_id)
+	add_logs(session, log_msg, "info", config_id)
 	new_build_jobs_list = []
 
 	# Setup portdb, package pool
@@ -127,19 +127,19 @@ def update_cpv_db(session, repo_cp_dict, config_id, zobcs_settings_dict):
 	pool.join()
 
 	log_msg = "Checking categories, package and ebuilds ... done"
-	add_zobcs_logs(session, log_msg, "info", config_id)
+	add_logs(session, log_msg, "info", config_id)
 
 def update_db_main(session, repo_cp_dict, config_id):
 	# Main
 	if repo_cp_dict == {}:
-                return True
+		return True
 	# Logging
 	zobcs_settings_dict = read_config_settings()
 	log_msg = "Update db started."
-	add_zobcs_logs(session, log_msg, "info", config_id)
+	add_logs(session, log_msg, "info", config_id)
 
 	# Update the cpv db
 	update_cpv_db(session, repo_cp_dict, config_id, zobcs_settings_dict)
 	log_msg = "Update db ... Done."
-	add_zobcs_logs(session, log_msg, "info", config_id)
+	add_logs(session, log_msg, "info", config_id)
 	return True

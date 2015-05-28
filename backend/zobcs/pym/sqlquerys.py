@@ -17,7 +17,7 @@ def get_config_id(session, setup, host):
 	ConfigInfo = session.query(Configs).filter_by(SetupId = SetupInfo.SetupId).filter_by(Hostname = host).one()
 	return ConfigInfo.ConfigId
 
-def add_zobcs_logs(session, log_msg, log_type, config_id):
+def add_logs(session, log_msg, log_type, config_id):
 	Add_Log = Logs(ConfigId = config_id, LogType = log_type, Msg = log_msg)
 	session.add(Add_Log)
 	session.commit()
@@ -143,13 +143,13 @@ def get_ebuild_info(session, build_dict):
 		return None, True
 	try:
 		EbuildInfo2 = EbuildInfo.one()
-	except (MultipleResultsFound) as e:
+	except MultipleResultsFound as e:
 		return EbuildInfo.all(), True
 	return EbuildInfo2, False
 
 def get_ebuild_info_ebuild_id(session, ebuild_id):
 	return session.query(Ebuilds).filter_by(EbuildId = ebuild_id).filter_by(Active = True).one()
-	
+
 def get_build_job_id(session, build_dict):
 	BuildJobsIdInfo = session.query(BuildJobs.BuildJobId).filter_by(EbuildId = build_dict['ebuild_id']).filter_by(ConfigId = build_dict['config_id']).all()
 	if BuildJobsIdInfo == []:

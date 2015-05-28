@@ -8,7 +8,7 @@ from __future__ import print_function
 from zobcs.readconf import get_conf_settings
 from zobcs.jobs import jobs_main
 from zobcs.ConnectionManager import NewConnection
-from zobcs.sqlquerys import add_zobcs_logs, get_config_id
+from zobcs.sqlquerys import add_logs, get_config_id
 from sqlalchemy.orm import sessionmaker
 import time
 
@@ -21,13 +21,13 @@ def main():
 	Session = sessionmaker(bind=NewConnection(zobcs_settings_dict))
 	session = Session()
 	config_id = get_config_id(session, config, hostname)
-	add_zobcs_logs(session, "Job deamon started", "info", config_id)
+	add_logs(session, "Job deamon started", "info", config_id)
 	repeat = True
 	while repeat:
 		jobs_main(session, config_id)
 		repeat = False
 		time.sleep(60)
-	add_zobcs_logs(session, "Job deamon stoped", "info", config_id)
+	add_logs(session, "Job deamon stoped", "info", config_id)
 
 if __name__ == "__main__":
 	main()

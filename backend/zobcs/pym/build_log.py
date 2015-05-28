@@ -20,13 +20,13 @@ portage.proxy.lazyimport.lazyimport(globals(),
 	'zobcs.actions:action_info,load_emerge_config',
 )
 
-from zobcs.repoman_zobcs import zobcs_repoman
+from zobcs.qachecks import check_repoman
 from zobcs.text import get_log_text_dict
 from zobcs.package import zobcs_package
 from zobcs.readconf import read_config_settings
 from zobcs.flags import zobcs_use_flags
 from zobcs.ConnectionManager import NewConnection
-from zobcs.sqlquerys import add_zobcs_logs, get_config_id, get_ebuild_id_db, add_new_buildlog, \
+from zobcs.sqlquerys import add_logs, get_config_id, get_ebuild_id_db, add_new_buildlog, \
 	get_package_info, get_build_job_id, get_use_id, get_config_info, get_hilight_info, get_error_info_list, \
 	add_e_info, get_fail_times, add_fail_times, update_fail_times, del_old_build_jobs, add_old_ebuild, \
 	update_buildjobs_status, update_manifest_sql, add_repoman_qa
@@ -40,7 +40,7 @@ def get_build_dict_db(session, config_id, settings, zobcs_settings_dict, pkg):
 	repo = pkg.repo
 	ebuild_version = cpv_getversion(pkg.cpv)
 	log_msg = "Logging %s:%s" % (pkg.cpv, repo,)
-	add_zobcs_logs(session, log_msg, "info", config_id)
+	add_logs(session, log_msg, "info", config_id)
 	PackageInfo = get_package_info(session, categories, package, repo)
 	build_dict = {}
 	build_dict['ebuild_version'] = ebuild_version
@@ -75,19 +75,19 @@ def get_build_dict_db(session, config_id, settings, zobcs_settings_dict, pkg):
 	if status:
 		if ebuild_id_list is None:
 			log_msg = "%s:%s Don't have any ebuild_id!" % (pkg.cpv, repo,)
-			add_zobcs_logs(session, log_msg, "info", config_id)
+			add_logs(session, log_msg, "info", config_id)
 			update_manifest_sql(session, build_dict['package_id'], "0")
 			init_package = zobcs_package(session, settings, myportdb, config_id, zobcs_settings_dict)
 			init_package.update_package_db(build_dict['package_id'])
 			ebuild_id_list, status = get_ebuild_id_db(session, build_dict['checksum'], build_dict['package_id'])
 			if status and ebuild_id_list is None:
 				log_msg = "%s:%s Don't have any ebuild_id!" % (pkg.cpv, repo,)
-				add_zobcs_logs(session, log_msg, "error", config_id)
+				add_logs(session, log_msg, "error", config_id)
 		else:
 			old_ebuild_id_list = []
 			for ebuild_id in ebuild_id_list:
 				log_msg = "%s:%s:%s Dups of checksums" % (pkg.cpv, repo, ebuild_id,)
-				add_zobcs_logs(session, log_msg, "error", config_id)
+				add_logs(session, log_msg, "error", config_id)
 				old_ebuild_id_list.append(ebuild_id)
 			add_old_ebuild(session, old_ebuild_id_list)
 		return
@@ -184,7 +184,6 @@ def search_buildlog(session, logfile_text_dict, max_text_lines):
 
 def get_buildlog_info(session, settings, pkg, build_dict):
 	myportdb = portage.portdbapi(mysettings=settings)
-	init_repoman = zobcs_repoman(settings, myportdb)
 	logfile_text_dict, max_text_lines = get_log_text_dict(settings.get("PORTAGE_LOG_FILE"))
 	hilight_dict = search_buildlog(session, logfile_text_dict, max_text_lines)
 	error_log_list = []
@@ -206,11 +205,9 @@ def get_buildlog_info(session, settings, pkg, build_dict):
 				i = i +1
 
 	# Run repoman check_repoman()
-	repoman_error_list = init_repoman.check_repoman(build_dict['cpv'], pkg.repo)
-	if repoman_error_list != []:
+	repoman_error_list = check_repoman(settings, myportdb, build_dict['cpv'], pkg.repo)
+	if repoman_error_list:
 		sum_build_log_list.append("1") # repoman = 1
-	else:
-		repoman_error_list = False
 	if qa_error_list != []:
 		sum_build_log_list.append("2") # qa = 2
 	else:
@@ -251,7 +248,7 @@ def add_buildlog_main(settings, pkg, trees):
 		build_dict = get_build_dict_db(session, config_id, settings, zobcs_settings_dict, pkg)
 	if build_dict is None:
 		log_msg = "Package %s:%s is NOT logged." % (pkg.cpv, pkg.repo,)
-		add_zobcs_logs(session, log_msg, "info", config_id)
+		add_logs(session, log_msg, "info", config_id)
 		session.close
 		return
 	build_log_dict = {}
@@ -268,18 +265,18 @@ def add_buildlog_main(settings, pkg, trees):
 	build_log_dict['log_hash'] = log_hash.hexdigest()
 	build_log_dict['logfilename'] = settings.get("PORTAGE_LOG_FILE").split(host_config)[1]
 	log_msg = "Logfile name: %s" % (settings.get("PORTAGE_LOG_FILE"),)
-	add_zobcs_logs(session, log_msg, "info", config_id)
+	add_logs(session, log_msg, "info", config_id)
 	build_log_dict['emerge_info'] = get_emerge_info_id(settings, trees, session, config_id)
 	log_id = add_new_buildlog(session, build_dict, build_log_dict)
 
 	if log_id is None:
 		log_msg = "Package %s:%s is NOT logged." % (pkg.cpv, pkg.repo,)
-		add_zobcs_logs(session, log_msg, "info", config_id)
+		add_logs(session, log_msg, "info", config_id)
 	else:
 		add_repoman_qa(session, build_log_dict, log_id)
 		os.chmod(settings.get("PORTAGE_LOG_FILE"), 0o664)
 		log_msg = "Package: %s:%s is logged." % (pkg.cpv, pkg.repo,)
-		add_zobcs_logs(session, log_msg, "info", config_id)
+		add_logs(session, log_msg, "info", config_id)
 		print("\n>>> Logging %s:%s\n" % (pkg.cpv, pkg.repo,))
 	session.close
 
