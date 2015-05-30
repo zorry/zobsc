@@ -13,7 +13,7 @@ from zobcs.sqlquerys import add_logs, get_package_info, get_config_info, \
 	get_package_metadata_sql, update_package_metadata, update_manifest_sql, \
 	get_package_info_from_package_id, get_config_all_info, add_new_package_sql, \
 	get_ebuild_checksums, get_ebuild_id_db, get_configmetadata_info, get_setup_info, \
-	get_ebuild_info_ebuild_id
+	get_ebuild_info_ebuild_id, get_ebuild_restrictions
 
 class zobcs_package(object):
 
@@ -146,6 +146,10 @@ class zobcs_package(object):
 
 					# Comper and add the cpv to buildqueue
 					if build_cpv == k:
+						restrictions_dict = get_ebuild_restrictions(self._session, ebuild_id)
+						if restrictions_dict:
+							if "test" in restrictions_dict and "test" in use_flagsDict:
+								use_flagsDict['test'] = False
 						add_new_build_job(self._session, ebuild_id, setup_id, use_flagsDict, self._config_id)
 						# B = Build cpv use-flags config
 						# FIXME log_msg need a fix to log the use flags corect.

@@ -76,9 +76,19 @@ class build_job_action(object):
 				log_msg = "filetext: %s" % filetext
 				add_logs(self._session, log_msg, "info", self._config_id)
 				with open("/etc/portage/package.use/99_autounmask", "a") as f:
-     					f.write(filetext)
-     					f.write('\n')
-     					f.close
+					f.write(filetext)
+					f.write('\n')
+					f.close
+					restrictions_dict = get_ebuild_restrictions(self._session, build_dict['ebuild_id'])
+				if restrictions_dict:
+					if "test" in restrictions_dict
+						filetext = k + ' ' + 'notest.conf'
+						log_msg = "filetext: %s" % filetext
+						add_logs(self._session, log_msg, "info", self._config_id)
+						with open("/etc/portage/package.env", "a") as f:
+							f.write(filetext)
+							f.write('\n')
+							f.close
 		log_msg = "build_cpv_list: %s" % (build_cpv_list,)
 		add_logs(self._session, log_msg, "info", self._config_id)
 
@@ -120,6 +130,9 @@ class build_job_action(object):
 		try:
 			os.remove("/etc/portage/package.use/99_autounmask")
 			with open("/etc/portage/package.use/99_autounmask", "a") as f:
+				f.close
+			os.remove("/etc/portage/package.env")
+			with open("/etc/portage/package.env", "a") as f:
 				f.close
 		except:
 			pass
