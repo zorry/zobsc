@@ -18,7 +18,7 @@ from zobcs.qacheck import check_file_in_manifest
 from zobcs.main import emerge_main
 from zobcs.build_log import log_fail_queru
 from zobcs.actions import load_emerge_config
-from zobcs.sqlquerys import add_logs, get_packages_to_build, update_buildjobs_status, is_build_job_done
+from zobcs.sqlquerys import add_logs, get_packages_to_build, update_buildjobs_status, is_build_job_done, get_ebuild_restrictions
 
 class build_job_action(object):
 
@@ -79,9 +79,9 @@ class build_job_action(object):
 					f.write(filetext)
 					f.write('\n')
 					f.close
-					restrictions_dict = get_ebuild_restrictions(self._session, build_dict['ebuild_id'])
+				restrictions_dict = get_ebuild_restrictions(self._session, build_dict['ebuild_id'])
 				if restrictions_dict:
-					if "test" in restrictions_dict
+					if "test" in restrictions_dict:
 						filetext = k + ' ' + 'notest.conf'
 						log_msg = "filetext: %s" % filetext
 						add_logs(self._session, log_msg, "info", self._config_id)
