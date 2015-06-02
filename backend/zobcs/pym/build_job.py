@@ -14,7 +14,7 @@ from portage.versions import cpv_getkey
 from portage.dep import check_required_use
 from zobcs.depclean import do_depclean
 from zobcs.flags import zobcs_use_flags
-from zobcs.qacheck import check_file_in_manifest
+from zobcs.qachecks import check_file_in_manifest
 from zobcs.main import emerge_main
 from zobcs.build_log import log_fail_queru
 from zobcs.actions import load_emerge_config
