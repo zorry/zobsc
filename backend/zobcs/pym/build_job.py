@@ -80,9 +80,10 @@ class build_job_action(object):
 					f.write(filetext)
 					f.write('\n')
 					f.close
-		if "test" in build_dict['build_useflags'] and "test" in settings.features:
-			if build_dict['build_useflags']['test'] is False:
-				disable_test_features = True
+		if not build_dict['build_useflags'] is None:
+			if "test" in build_dict['build_useflags'] and "test" in settings.features:
+				if build_dict['build_useflags']['test'] is False:
+					disable_test_features = True
 		restrictions_dict = get_ebuild_restrictions(self._session, build_dict['ebuild_id'])
 		if restrictions_dict:
 			if "test" in restrictions_dict:
