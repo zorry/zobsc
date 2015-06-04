@@ -6,6 +6,7 @@ import warnings
 import sys
 import codecs
 from portage import os, _encodings, _unicode_decode
+from portage.checksum import _hash_filter
 from portage.exception import DigestException, FileNotFound
 from portage.localization import _
 from portage.manifest import Manifest
