@@ -102,7 +102,7 @@ def git_repo_sync_main(session):
 	add_logs(session, log_msg, "info", config_id)
 	return repo_cp_dict
 
-def git_pull(session, git_repo, config_id):
+def git_pull(session, repo_dir), config_id):
 	log_msg = "Git pull"
 	add_logs(session, log_msg, "info", config_id)
 	repo = git.Repo(repo_dir)
